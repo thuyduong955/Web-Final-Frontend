@@ -1,0 +1,286 @@
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+  --radius: 0.5rem;
+
+  /* Design Tokens from AIInterview */
+  /* Colors - Primary */
+  --color-primary: #62d0ee;
+  --color-primary-light: #e9faff;
+  --color-primary-dark: #000000;
+  --color-primary-transparent: #00000080;
+
+  /* Colors - Backgrounds */
+  --color-bg-primary: #ffffff;
+  --color-bg-secondary: #ecfbff;
+  --color-bg-gradient: linear-gradient(131.49deg, #ffffff 47.4%, #ecfbff 82.16%);
+  --color-bg-dark: #00000080;
+
+  /* Colors - Text */
+  --color-text-primary: #000000;
+  --color-text-secondary: #a4a4a4;
+  --color-text-tertiary: #c1c1c1;
+  --color-text-light: #ffffff;
+  --color-text-placeholder: #a8a8a8;
+
+  /* Colors - Borders */
+  --color-border-primary: #dddddd;
+  --color-border-secondary: #e0e0e0;
+  --color-border-tertiary: #ebebeb;
+  --color-border-light: #e7e7e7;
+  --color-border-divider: #e3e3e3;
+
+  /* Colors - Status */
+  --color-error: #ef3636;
+  --color-warning: #fac1c2;
+
+  /* Typography */
+  --font-primary: "Be Vietnam Pro", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
+  --font-secondary: Inter, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
+
+  /* Spacing */
+  --space-1: 8px;
+  --space-2: 16px;
+  --space-3: 24px;
+  --space-4: 32px;
+  --space-5: 48px;
+  --space-6: 64px;
+  --space-lg: 22px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+  --space-3xl: 64px;
+
+  /* Border Radius */
+  --radius-sm: 8px;
+  --radius-md: 16px;
+  --radius-lg: 32px;
+  --radius-xl: 64px;
+  --radius-full: 9999px;
+  --radius-circle: 50%;
+
+  /* Layout */
+  --layout-max-width: 1920px;
+  --layout-sidebar-width: 119px;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --shadow-card: 0 12px 30px -10px rgba(0, 0, 0, 0.08);
+  --shadow-glow: 0 10px 25px rgba(76, 161, 247, 0.35);
+
+  /* Brand Colors */
+  --color-brand-cyan: #62d1ee;
+  --color-brand-blue: #4ba1f7;
+  --color-brand-dark: #0f172a;
+  --color-brand-gray: #475467;
+  --color-brand-bg: #f4f7fb;
+  --color-brand-muted: #64748b;
+
+  /* ShadCN Mappings */
+  --color-card: #ffffff;
+  --color-card-foreground: #0f172a;
+  --color-popover: #ffffff;
+  --color-popover-foreground: #0f172a;
+  --color-primary: #62d1ee;
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #ecfbff;
+  --color-secondary-foreground: #0f172a;
+  --color-muted: #f1f5f9;
+  --color-muted-foreground: #64748b;
+  --color-accent: #f1f5f9;
+  --color-accent-foreground: #0f172a;
+  --color-destructive: #ef4444;
+  --color-destructive-foreground: #ffffff;
+  --color-border: #e2e8f0;
+  --color-input: #e2e8f0;
+  --color-ring: #62d1ee;
+}
+
+
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: radial-gradient(circle at top right, rgba(98, 209, 238, 0.25), transparent 40%), #f4f7fb;
+  background-attachment: fixed;
+  font-family: 'Be Vietnam Pro', 'Space Grotesk', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color: #101828;
+}
+
+@layer components {
+  .app-shell {
+    min-height: 100vh;
+    display: flex;
+    gap: 2rem;
+  }
+
+  .card-panel {
+    @apply border border-slate-900/10 rounded-[20px] shadow-card;
+    background-color: rgba(255, 255, 255, 0.92);
+  }
+}
+
+/* Custom utility classes based on Figma designs */
+@layer utilities {
+
+  /* Background gradients */
+  .bg-gradient-main {
+    background-image: var(--color-bg-gradient);
+  }
+
+  /* Typography utilities */
+  .font-primary {
+    font-family: var(--font-primary);
+  }
+
+  .font-secondary {
+    font-family: var(--font-secondary);
+  }
+
+  /* Layout utilities */
+  .layout-max {
+    max-width: var(--layout-max-width);
+  }
+
+  .layout-sidebar {
+    width: var(--layout-sidebar-width);
+    min-width: var(--layout-sidebar-width);
+  }
+
+  /* Interview screen specific utilities */
+  .interview-container {
+    display: flex;
+    align-items: flex-start;
+    column-gap: var(--space-3xl);
+    border-radius: var(--radius-xl);
+    padding: var(--space-6);
+    width: var(--layout-max-width);
+    height: 1200px;
+    overflow: hidden;
+    background-image: var(--color-bg-gradient);
+  }
+
+  .interview-sidebar {
+    display: flex;
+    position: relative;
+    flex-direction: column;
+    flex-shrink: 0;
+    align-items: center;
+    align-self: stretch;
+    justify-content: space-between;
+    background: var(--color-bg-primary);
+    padding: var(--space-4) var(--space-2);
+    width: var(--layout-sidebar-width);
+    min-width: var(--layout-sidebar-width);
+  }
+
+  .interview-content {
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    align-items: flex-start;
+    padding: var(--space-4);
+    row-gap: var(--space-5);
+  }
+
+  .chat-bubble {
+    border-radius: var(--radius-lg);
+    background: var(--color-bg-primary);
+    padding: var(--space-4) var(--space-4) var(--space-6);
+    overflow: hidden;
+  }
+
+  .status-badge {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    column-gap: var(--space-2);
+    border-radius: var(--radius-full);
+    background: var(--color-primary-light);
+    padding: var(--space-1) var(--space-2);
+    overflow: hidden;
+  }
+
+  .control-button {
+    flex-shrink: 0;
+    border-radius: var(--radius-full);
+    width: 64px;
+    height: 64px;
+    overflow: hidden;
+  }
+
+  .record-button {
+    position: relative;
+    flex-shrink: 0;
+    border: 1px solid var(--color-border-tertiary);
+    border-radius: var(--radius-md);
+    background: var(--color-warning);
+    width: 64px;
+    height: 64px;
+  }
+
+  .search-input {
+    display: flex;
+    flex-grow: 1;
+    align-items: center;
+    justify-content: space-between;
+    border: 1px solid var(--color-border-primary);
+    border-radius: var(--radius-full);
+    background: var(--color-bg-primary);
+    padding: var(--space-2) var(--space-3);
+    overflow: hidden;
+  }
+
+  .filter-button {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    border: 1px solid var(--color-border-secondary);
+    border-radius: var(--radius-full);
+    background: var(--color-bg-primary);
+    padding: var(--space-2);
+  }
+
+  .interview-card {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    align-self: stretch;
+    column-gap: var(--space-2);
+  }
+
+  .section-title {
+    flex-shrink: 0;
+    line-height: var(--line-height-2xl);
+    letter-spacing: 0;
+    color: var(--color-text-primary);
+    font-family: var(--font-primary);
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .body-text {
+    flex-shrink: 0;
+    line-height: var(--line-height-loose);
+    letter-spacing: 0;
+    color: var(--color-text-secondary);
+    font-family: var(--font-primary);
+    font-size: var(--font-size-lg);
+  }
+
+  .caption-text {
+    flex-shrink: 0;
+    line-height: var(--line-height-tight);
+    letter-spacing: 0;
+    color: var(--color-text-primary);
+    font-family: var(--font-secondary);
+    font-size: var(--font-size-xs);
+  }
+}

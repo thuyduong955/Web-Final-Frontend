@@ -1,33 +1,36 @@
-## Lesson Library UI
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-Giao diện React được thiết kế theo Figma spec cho LessonLibraryPage với các thẻ InterviewAiCard, mô phỏng thư viện bài học luyện tập phỏng vấn (giải thuật, system design, hành vi...). Ứng dụng được dựng bằng [Vite](https://vitejs.dev/) + React chạy trên Node.js.
+## Getting Started
 
-### Công nghệ chính
+First, run the development server:
 
-- React 18 + Vite 7 (HMR, ESBuild)
-- CSS modules thuần (`src/components/InterviewAiCard.css`, `src/pages/LessonLibraryPage.css`)
-- Google Fonts (Space Grotesk)
-
-### Chạy dự án
-
-```powershell
-npm install
+```bash
 npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
 ```
 
-Sau khi `npm run dev`, Vite mở `http://localhost:5173`. Nhấn `Ctrl+C` để dừng.
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-### Build production
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-```powershell
-npm run build
-npm run preview   # xem thử gói build
-```
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-### Cấu trúc nổi bật
+## Learn More
 
-- `src/pages/LessonLibraryPage.jsx`: Trang chính với hero, bộ lọc, grid các card.
-- `src/components/InterviewAiCard.jsx`: Card tái sử dụng với icon tuỳ biến, rating, meta.
-- `src/index.css`: Global token, typography.
+To learn more about Next.js, take a look at the following resources:
 
-Tuỳ biến thêm dữ liệu trong mảng `LESSONS` hoặc kết nối API thực tế để mở rộng.
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+
+## Deploy on Vercel
+
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
