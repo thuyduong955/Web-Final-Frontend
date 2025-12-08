@@ -6,8 +6,12 @@ import { LoginForm } from '@/components/auth/LoginForm';
 import { SignUpForm } from '@/components/auth/SignUpForm';
 import { useAuth } from '@/hooks/useAuth';
 
-export const AuthPage: React.FC = () => {
-  const [isLogin, setIsLogin] = useState(true);
+interface AuthPageProps {
+  isRegister?: boolean;
+}
+
+export const AuthPage: React.FC<AuthPageProps> = ({ isRegister = false }) => {
+  const [isLogin, setIsLogin] = useState(!isRegister);
   const { user, loading } = useAuth();
   const router = useRouter();
 

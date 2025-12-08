@@ -26,6 +26,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     }, []);
 
     const setTheme = (newTheme: Theme) => {
+        if (!mounted) return; // Prevent setting theme before hydration
         setThemeState(newTheme);
         localStorage.setItem('theme', newTheme);
         document.documentElement.classList.toggle('dark', newTheme === 'dark');
@@ -35,11 +36,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         setTheme(theme === 'light' ? 'dark' : 'light');
     };
 
-    // Prevent hydration mismatch
-    if (!mounted) {
-        return <>{children}</>;
-    }
-
+    // Always provide context value, using default/current values
     return (
         <ThemeContext.Provider value={{ theme, setTheme, toggleTheme }}>
             {children}

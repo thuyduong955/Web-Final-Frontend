@@ -95,7 +95,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     localStorage.removeItem('access_token');
     setUser(null);
     setProfile(null);
-    router.push('/auth/login');
+    router.push('/login');
     return { error: null };
   };
 
