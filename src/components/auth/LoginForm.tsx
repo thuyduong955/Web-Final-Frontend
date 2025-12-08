@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -87,9 +88,9 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onToggleMode }) => {
               <label htmlFor="password" className="text-sm font-medium text-slate-700">
                 Mật khẩu
               </label>
-              <button type="button" className="text-xs text-brand-cyan hover:underline font-medium">
+              <Link href="/forgot-password" className="text-xs text-brand-cyan hover:underline font-medium">
                 Quên mật khẩu?
-              </button>
+              </Link>
             </div>
             <div className="relative">
               <Input

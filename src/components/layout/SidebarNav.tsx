@@ -84,7 +84,7 @@ export function SidebarNav({ activeId, onChange }: SidebarNavProps) {
 
     return (
         <aside
-            className="w-[72px] m-6 ml-6 p-2 bg-white dark:bg-slate-800 border border-[#10182814] dark:border-slate-700 rounded-[24px] flex flex-col items-center gap-8 shadow-[0_25px_45px_rgba(13,38,76,0.08)] dark:shadow-[0_25px_45px_rgba(0,0,0,0.3)] sticky top-6 self-start max-h-[calc(100vh-3rem)] z-50 transition-colors duration-300"
+            className="w-[72px] m-6 ml-6 p-2 bg-white dark:bg-slate-800/50 border border-[#10182814] dark:border-slate-700/50 rounded-[24px] flex flex-col items-center gap-8 shadow-[0_25px_45px_rgba(13,38,76,0.08)] dark:shadow-[0_25px_45px_rgba(0,0,0,0.3)] sticky top-6 self-start max-h-[calc(100vh-3rem)] z-50 transition-colors duration-300"
             aria-label="Thanh tác vụ"
         >
             <div className="flex flex-col items-center gap-4 w-full">

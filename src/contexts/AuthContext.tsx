@@ -70,7 +70,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         email,
         password,
         name: userData.full_name,
-        role: userData.role === 'job_seeker' ? 'INTERVIEWEE' : 'INTERVIEWER' // Map roles
+        role: userData.role // Already 'INTERVIEWEE' or 'INTERVIEWER' from SignUpForm
       });
       // Auto login after register? Or require login?
       // For now, let's require login
