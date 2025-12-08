@@ -26,8 +26,8 @@ function CallbackContent() {
             try {
                 const user = JSON.parse(userParam);
 
-                // Store token and user in localStorage
-                localStorage.setItem('accessToken', token);
+                // Store token and user in localStorage (use 'access_token' to match AuthContext)
+                localStorage.setItem('access_token', token);
                 localStorage.setItem('user', JSON.stringify(user));
 
                 setStatus('success');

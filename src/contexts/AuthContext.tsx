@@ -38,7 +38,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         full_name: userData.name || '',
         role: userData.role,
         avatar_url: userData.avatar,
-        profile_data: {},
+        profile_data: {
+          phone: userData.phone,
+          location: userData.location,
+          bio: userData.bio,
+          gender: userData.gender,
+          dateOfBirth: userData.dateOfBirth,
+        },
         created_at: userData.createdAt,
         updated_at: userData.updatedAt || new Date().toISOString()
       };

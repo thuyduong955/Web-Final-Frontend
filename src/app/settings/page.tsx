@@ -54,7 +54,7 @@ function SettingsContent() {
         phone: '',
         location: '',
         bio: '',
-        gender: '' as '' | 'MALE' | 'FEMALE' | 'OTHER' | 'PREFER_NOT_TO_SAY',
+        gender: '',
         dateOfBirth: '',
         avatar: '',
     });
@@ -89,14 +89,15 @@ function SettingsContent() {
 
     useEffect(() => {
         if (profile) {
+            const pd = profile.profile_data || {};
             const data = {
                 fullName: profile.full_name || '',
-                phone: (profile as any).phone || '',
-                location: (profile as any).location || '',
-                bio: (profile as any).bio || '',
-                gender: (profile as any).gender || '',
-                dateOfBirth: (profile as any).dateOfBirth || '',
-                avatar: (profile as any).avatar || '',
+                phone: String(pd.phone || ''),
+                location: String(pd.location || ''),
+                bio: String(pd.bio || ''),
+                gender: String(pd.gender || ''),
+                dateOfBirth: String(pd.dateOfBirth || ''),
+                avatar: profile.avatar_url || '',
             };
             setProfileData(data);
             setOriginalProfileData(data);
