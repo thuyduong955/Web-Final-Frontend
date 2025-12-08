@@ -1,63 +1,47 @@
 import api from './api';
 
-interface PresignedUrlResponse {
-    uploadUrl: string;
-    publicUrl: string;
+interface UploadResponse {
+    url: string;
     key: string;
-    maxSize: number;
-    contentType: string;
+    filename?: string;
 }
 
 /**
  * Upload service for R2 storage
- * Handles avatar, content thumbnails, videos, files, and CVs
+ * Uploads files to backend, which then uploads to R2
+ * This bypasses CORS issues with direct R2 uploads
  */
 export const uploadService = {
     // ═══════════════════════════════════════════════════════════════
     // AVATAR
     // ═══════════════════════════════════════════════════════════════
     async uploadAvatar(file: File): Promise<string> {
-        // Get presigned URL from backend
-        const { data } = await api.post<PresignedUrlResponse>('/upload/avatar', {
-            fileType: file.type,
+        this.validateImageFile(file, 5);
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const { data } = await api.post<UploadResponse>('/upload/avatar', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
         });
 
-        // Validate file size
-        if (file.size > data.maxSize) {
-            throw new Error(`File size exceeds ${data.maxSize / 1024 / 1024}MB limit`);
-        }
-
-        // Upload directly to R2
-        await fetch(data.uploadUrl, {
-            method: 'PUT',
-            body: file,
-            headers: {
-                'Content-Type': file.type,
-            },
-        });
-
-        return data.publicUrl;
+        return data.url;
     },
 
     // ═══════════════════════════════════════════════════════════════
     // CONTENT THUMBNAIL
     // ═══════════════════════════════════════════════════════════════
     async uploadContentThumbnail(contentId: string, file: File): Promise<string> {
-        const { data } = await api.post<PresignedUrlResponse>(`/upload/content/${contentId}/thumbnail`, {
-            fileType: file.type,
+        this.validateImageFile(file, 2);
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const { data } = await api.post<UploadResponse>(`/upload/content/${contentId}/thumbnail`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
         });
 
-        if (file.size > data.maxSize) {
-            throw new Error(`File size exceeds ${data.maxSize / 1024 / 1024}MB limit`);
-        }
-
-        await fetch(data.uploadUrl, {
-            method: 'PUT',
-            body: file,
-            headers: { 'Content-Type': file.type },
-        });
-
-        return data.publicUrl;
+        return data.url;
     },
 
     // ═══════════════════════════════════════════════════════════════
@@ -68,63 +52,40 @@ export const uploadService = {
         file: File,
         onProgress?: (progress: number) => void
     ): Promise<string> {
-        const { data } = await api.post<PresignedUrlResponse>(`/upload/content/${contentId}/video`, {
-            fileType: file.type,
-        });
+        this.validateVideoFile(file, 500);
 
-        if (file.size > data.maxSize) {
-            throw new Error(`File size exceeds ${data.maxSize / 1024 / 1024}MB limit`);
-        }
+        const formData = new FormData();
+        formData.append('file', file);
 
-        // Use XMLHttpRequest for progress tracking
-        return new Promise((resolve, reject) => {
-            const xhr = new XMLHttpRequest();
-
-            xhr.upload.addEventListener('progress', (event) => {
-                if (event.lengthComputable && onProgress) {
-                    const progress = Math.round((event.loaded / event.total) * 100);
+        const { data } = await api.post<UploadResponse>(`/upload/content/${contentId}/video`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+            onUploadProgress: (progressEvent) => {
+                if (progressEvent.total && onProgress) {
+                    const progress = Math.round((progressEvent.loaded / progressEvent.total) * 100);
                     onProgress(progress);
                 }
-            });
-
-            xhr.addEventListener('load', () => {
-                if (xhr.status >= 200 && xhr.status < 300) {
-                    resolve(data.publicUrl);
-                } else {
-                    reject(new Error(`Upload failed with status ${xhr.status}`));
-                }
-            });
-
-            xhr.addEventListener('error', () => {
-                reject(new Error('Upload failed'));
-            });
-
-            xhr.open('PUT', data.uploadUrl);
-            xhr.setRequestHeader('Content-Type', file.type);
-            xhr.send(file);
+            },
         });
+
+        return data.url;
     },
 
     // ═══════════════════════════════════════════════════════════════
     // CONTENT FILE (attachments)
     // ═══════════════════════════════════════════════════════════════
     async uploadContentFile(contentId: string, file: File): Promise<string> {
-        const { data } = await api.post<PresignedUrlResponse>(`/upload/content/${contentId}/file`, {
-            fileName: file.name,
-            fileType: file.type,
-        });
-
-        if (file.size > data.maxSize) {
-            throw new Error(`File size exceeds ${data.maxSize / 1024 / 1024}MB limit`);
+        if (file.size > 50 * 1024 * 1024) {
+            throw new Error('File size must be less than 50MB');
         }
 
-        await fetch(data.uploadUrl, {
-            method: 'PUT',
-            body: file,
-            headers: { 'Content-Type': file.type },
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const { data } = await api.post<UploadResponse>(`/upload/content/${contentId}/file`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
         });
 
-        return data.publicUrl;
+        return data.url;
     },
 
     // ═══════════════════════════════════════════════════════════════
@@ -134,44 +95,18 @@ export const uploadService = {
         if (file.type !== 'application/pdf') {
             throw new Error('CV must be a PDF file');
         }
-
-        const { data } = await api.post<PresignedUrlResponse>('/upload/cv', {
-            fileType: file.type,
-        });
-
-        if (file.size > data.maxSize) {
-            throw new Error(`File size exceeds ${data.maxSize / 1024 / 1024}MB limit`);
+        if (file.size > 10 * 1024 * 1024) {
+            throw new Error('CV size must be less than 10MB');
         }
 
-        await fetch(data.uploadUrl, {
-            method: 'PUT',
-            body: file,
-            headers: { 'Content-Type': file.type },
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const { data } = await api.post<UploadResponse>('/upload/cv', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
         });
 
-        return data.publicUrl;
-    },
-
-    // ═══════════════════════════════════════════════════════════════
-    // GENERIC FILE UPLOAD
-    // ═══════════════════════════════════════════════════════════════
-    async uploadFile(file: File): Promise<string> {
-        const { data } = await api.post<PresignedUrlResponse>('/upload/presign', {
-            fileName: file.name,
-            fileType: file.type,
-        });
-
-        if (file.size > data.maxSize) {
-            throw new Error(`File size exceeds ${data.maxSize / 1024 / 1024}MB limit`);
-        }
-
-        await fetch(data.uploadUrl, {
-            method: 'PUT',
-            body: file,
-            headers: { 'Content-Type': file.type },
-        });
-
-        return data.publicUrl;
+        return data.url;
     },
 
     // ═══════════════════════════════════════════════════════════════
