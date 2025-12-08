@@ -11,7 +11,7 @@ const AlertDialog = ({ open, onOpenChange, children }: { open?: boolean; onOpenC
                 className="fixed inset-0 bg-black/80"
                 onClick={() => onOpenChange?.(false)}
             />
-            <div className="relative z-50 grid w-full max-w-lg gap-4 border bg-background p-6 shadow-lg sm:rounded-lg">
+            <div className="relative z-50 grid w-full max-w-lg gap-4 border border-slate-200 bg-white dark:bg-slate-800 dark:border-slate-700 p-6 shadow-lg sm:rounded-lg transition-colors">
                 {children}
             </div>
         </div>
@@ -64,7 +64,7 @@ const AlertDialogTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
     <h2
         ref={ref}
-        className={cn("text-lg font-semibold", className)}
+        className={cn("text-lg font-semibold text-slate-900 dark:text-white", className)}
         {...props}
     />
 ))
@@ -76,7 +76,7 @@ const AlertDialogDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
     <p
         ref={ref}
-        className={cn("text-sm text-muted-foreground", className)}
+        className={cn("text-sm text-slate-500 dark:text-slate-400", className)}
         {...props}
     />
 ))

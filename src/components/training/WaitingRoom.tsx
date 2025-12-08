@@ -216,21 +216,21 @@ export const WaitingRoom: React.FC<WaitingRoomProps> = ({ onJoinCall }) => {
                 </Card>
 
                 {/* Info Card */}
-                <Card className="bg-gradient-to-br from-brand-cyan/5 to-blue-50 border-brand-cyan/20 h-fit">
+                <Card className="bg-gradient-to-br from-brand-cyan/5 to-blue-50 dark:from-brand-cyan/10 dark:to-slate-800 border-brand-cyan/20 h-fit">
                     <CardHeader>
                         <CardTitle className="text-brand-cyan text-lg">Lưu ý nhanh</CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-4 text-slate-600 text-sm">
+                    <CardContent className="space-y-4 text-slate-600 dark:text-slate-300 text-sm">
                         <div className="flex gap-3">
-                            <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shrink-0 text-brand-cyan font-bold shadow-sm">1</div>
+                            <div className="w-8 h-8 rounded-full bg-white dark:bg-slate-700 flex items-center justify-center shrink-0 text-brand-cyan font-bold shadow-sm">1</div>
                             <p className="pt-1">Chọn người dùng từ danh sách để bắt đầu cuộc gọi.</p>
                         </div>
                         <div className="flex gap-3">
-                            <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shrink-0 text-brand-cyan font-bold shadow-sm">2</div>
+                            <div className="w-8 h-8 rounded-full bg-white dark:bg-slate-700 flex items-center justify-center shrink-0 text-brand-cyan font-bold shadow-sm">2</div>
                             <p className="pt-1">Cuộc gọi sẽ được tự động ghi hình để bạn xem lại sau.</p>
                         </div>
                         <div className="flex gap-3">
-                            <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shrink-0 text-brand-cyan font-bold shadow-sm">3</div>
+                            <div className="w-8 h-8 rounded-full bg-white dark:bg-slate-700 flex items-center justify-center shrink-0 text-brand-cyan font-bold shadow-sm">3</div>
                             <p className="pt-1">Giữ thái độ chuyên nghiệp và lịch sự.</p>
                         </div>
                     </CardContent>

@@ -14,10 +14,10 @@ export default function Dashboard() {
     return (
         <div className="w-[min(1200px,92vw)] mx-auto py-10 flex flex-col gap-8">
             <header>
-                <h1 className="text-3xl font-bold text-slate-900">
+                <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
                     Xin chào, {profile?.full_name || 'User'}
                 </h1>
-                <p className="text-slate-500 mt-2">
+                <p className="text-slate-500 dark:text-slate-400 mt-2">
                     Chào mừng bạn quay trở lại. Hôm nay bạn muốn làm gì?
                 </p>
             </header>
@@ -77,8 +77,8 @@ export default function Dashboard() {
             </div>
 
             <section className="mt-8">
-                <h2 className="text-xl font-bold text-slate-800 mb-4">Hoạt động gần đây</h2>
-                <div className="bg-white rounded-xl border border-slate-200 p-8 text-center text-slate-500">
+                <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-4">Hoạt động gần đây</h2>
+                <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-8 text-center text-slate-500 dark:text-slate-400">
                     <p>Chưa có hoạt động nào gần đây.</p>
                     <Button variant="link" className="text-brand-cyan mt-2" onClick={() => router.push('/library')}>
                         Tìm bài học mới

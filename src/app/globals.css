@@ -1,6 +1,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -102,7 +104,34 @@
   --color-ring: #62d1ee;
 }
 
-
+/* Dark mode variables */
+.dark {
+  --background: #0f172a;
+  --foreground: #f8fafc;
+  
+  --color-bg-primary: #1e293b;
+  --color-bg-secondary: #0f172a;
+  --color-bg-gradient: linear-gradient(131.49deg, #1e293b 47.4%, #0f172a 82.16%);
+  
+  --color-text-primary: #f8fafc;
+  --color-text-secondary: #94a3b8;
+  --color-text-tertiary: #64748b;
+  
+  --color-border-primary: #334155;
+  --color-border-secondary: #475569;
+  --color-border-tertiary: #334155;
+  
+  --color-card: #1e293b;
+  --color-card-foreground: #f8fafc;
+  --color-popover: #1e293b;
+  --color-popover-foreground: #f8fafc;
+  --color-muted: #334155;
+  --color-muted-foreground: #94a3b8;
+  --color-accent: #334155;
+  --color-accent-foreground: #f8fafc;
+  --color-border: #334155;
+  --color-input: #334155;
+}
 
 body {
   margin: 0;
@@ -111,6 +140,13 @@ body {
   background-attachment: fixed;
   font-family: 'Be Vietnam Pro', 'Space Grotesk', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   color: #101828;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.dark body,
+html.dark body {
+  background: radial-gradient(circle at top right, rgba(98, 209, 238, 0.1), transparent 40%), #0f172a;
+  color: #f8fafc;
 }
 
 @layer components {
@@ -123,6 +159,11 @@ body {
   .card-panel {
     @apply border border-slate-900/10 rounded-[20px] shadow-card;
     background-color: rgba(255, 255, 255, 0.92);
+  }
+  
+  .dark .card-panel {
+    @apply border-slate-700/50;
+    background-color: rgba(30, 41, 59, 0.92);
   }
 }
 
@@ -283,4 +324,138 @@ body {
     font-family: var(--font-secondary);
     font-size: var(--font-size-xs);
   }
+}
+
+/* Date Input Styling */
+input[type="date"] {
+  text-transform: uppercase;
+  position: relative;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.7;
+  padding: 4px;
+  margin-left: 4px;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+/* Dark mode - calendar picker indicator */
+:where(.dark, .dark *) input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1) brightness(2);
+}
+
+/* Firefox date input */
+input[type="date"]::-moz-calendar-picker-indicator {
+  cursor: pointer;
+}
+
+@supports (-moz-appearance: none) {
+  .dark input[type="date"] {
+    color-scheme: dark;
+  }
+}
+
+/* Custom Scrollbar Styling */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: #62d1ee #f1f5f9;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: linear-gradient(to bottom, #e0f7fa, #f1f5f9);
+  border-radius: 999px;
+  margin: 4px 0;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, #62d1ee, #4ba1f7);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  box-shadow: inset 0 0 4px rgba(98, 209, 238, 0.3);
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(to bottom, #4bc5e6, #3b8fd4);
+  background-clip: padding-box;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:active {
+  background: linear-gradient(to bottom, #38bdd8, #2d7fc4);
+  background-clip: padding-box;
+}
+
+/* Dark mode scrollbar */
+:where(.dark, .dark *) .scrollbar-thin {
+  scrollbar-color: #0891b2 #334155;
+}
+
+:where(.dark, .dark *) .scrollbar-thin::-webkit-scrollbar-track {
+  background: linear-gradient(to bottom, #1e293b, #334155);
+}
+
+:where(.dark, .dark *) .scrollbar-thin::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, #06b6d4, #0891b2);
+  box-shadow: inset 0 0 4px rgba(6, 182, 212, 0.4);
+}
+
+:where(.dark, .dark *) .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(to bottom, #22d3ee, #06b6d4);
+  background-clip: padding-box;
+}
+
+/* Scrollbar for cards/containers */
+.scrollbar-styled {
+  scrollbar-width: thin;
+  scrollbar-color: #94a3b8 #e2e8f0;
+}
+
+.scrollbar-styled::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.scrollbar-styled::-webkit-scrollbar-track {
+  background: #e2e8f0;
+  border-radius: 999px;
+}
+
+.scrollbar-styled::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+  border-radius: 999px;
+}
+
+.scrollbar-styled::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+:where(.dark, .dark *) .scrollbar-styled::-webkit-scrollbar-track {
+  background: #1e293b;
+}
+
+:where(.dark, .dark *) .scrollbar-styled::-webkit-scrollbar-thumb {
+  background: #475569;
+}
+
+:where(.dark, .dark *) .scrollbar-styled::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+/* Hide scrollbar but keep functionality */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
 }

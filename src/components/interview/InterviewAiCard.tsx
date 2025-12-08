@@ -72,18 +72,18 @@ export function InterviewAiCard({
     ));
 
     return (
-        <article className="flex flex-col gap-3 bg-white border border-brand-cyan rounded-[16px] p-[1rem_1.25rem] shadow-[0_14px_25px_rgba(0,0,0,0.04)] transition-all duration-200 ease-out hover:-translate-y-1.5 hover:shadow-[0_30px_45px_rgba(0,0,0,0.08)] h-full">
+        <article className="flex flex-col gap-3 bg-white dark:bg-slate-800 border border-brand-cyan dark:border-cyan-500/50 rounded-[16px] p-[1rem_1.25rem] shadow-[0_14px_25px_rgba(0,0,0,0.04)] dark:shadow-[0_14px_25px_rgba(0,0,0,0.2)] transition-all duration-200 ease-out hover:-translate-y-1.5 hover:shadow-[0_30px_45px_rgba(0,0,0,0.08)] dark:hover:shadow-[0_30px_45px_rgba(0,0,0,0.3)] h-full">
             <div className="flex flex-col gap-2">
-                <h3 className="text-[clamp(1.05rem,0.95rem+0.4vw,1.4rem)] font-semibold text-brand-dark m-0 leading-[1.2] line-clamp-2 min-h-[3rem]">{title}</h3>
+                <h3 className="text-[clamp(1.05rem,0.95rem+0.4vw,1.4rem)] font-semibold text-brand-dark dark:text-white m-0 leading-[1.2] line-clamp-2 min-h-[3rem]">{title}</h3>
 
-                <div className="flex flex-wrap items-center gap-[0.35rem_0.85rem] text-brand-muted text-[0.8rem]">
+                <div className="flex flex-wrap items-center gap-[0.35rem_0.85rem] text-brand-muted dark:text-slate-400 text-[0.8rem]">
                     <div className="inline-flex items-center gap-[0.35rem]">
                         <UserIcon />
                         <span>{formatViews(views)} lượt xem</span>
                     </div>
-                    {duration && <span className="inline-flex items-center px-[0.7rem] py-[0.2rem] rounded-full bg-[rgba(98,209,238,0.12)] text-brand-cyan font-medium">⏱ {duration}</span>}
+                    {duration && <span className="inline-flex items-center px-[0.7rem] py-[0.2rem] rounded-full bg-[rgba(98,209,238,0.12)] dark:bg-cyan-500/20 text-brand-cyan font-medium">⏱ {duration}</span>}
                     {difficulty && (
-                        <span className="inline-flex items-center px-[0.7rem] py-[0.2rem] rounded-full bg-[rgba(16,24,40,0.05)] text-brand-dark font-medium">
+                        <span className="inline-flex items-center px-[0.7rem] py-[0.2rem] rounded-full bg-[rgba(16,24,40,0.05)] dark:bg-slate-700 text-brand-dark dark:text-slate-300 font-medium">
                             {difficulty}
                         </span>
                     )}
@@ -92,7 +92,7 @@ export function InterviewAiCard({
                 {tags.length > 0 && (
                     <ul className="flex flex-wrap gap-[0.3rem] m-[0.1rem_0_0] p-0 list-none">
                         {tags.map((tag) => (
-                            <li key={tag} className="px-[0.6rem] py-[0.18rem] rounded-full bg-[#f4f8fb] text-brand-gray text-[0.75rem]">
+                            <li key={tag} className="px-[0.6rem] py-[0.18rem] rounded-full bg-[#f4f8fb] dark:bg-slate-700 text-brand-gray dark:text-slate-300 text-[0.75rem]">
                                 {tag}
                             </li>
                         ))}
@@ -101,7 +101,7 @@ export function InterviewAiCard({
             </div>
 
             <div className="flex items-center justify-between gap-3 mt-auto">
-                <div className="flex items-center gap-2 text-brand-muted text-[0.85rem]">
+                <div className="flex items-center gap-2 text-brand-muted dark:text-slate-400 text-[0.85rem]">
                     <div className="inline-flex gap-[0.2rem]">{stars}</div>
                     <strong className="text-[1.25rem] text-brand-cyan">{roundedRating.toFixed(1)}</strong>
                     {typeof reviewCount === 'number' && <span>({reviewCount} đánh giá)</span>}
