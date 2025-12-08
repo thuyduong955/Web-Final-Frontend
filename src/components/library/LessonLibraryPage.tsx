@@ -281,8 +281,8 @@ export function LessonLibraryPage() {
                         ))}
                     </div>
 
-                    {/* Recruiter Action */}
-                    {(profile?.role === 'recruiter' || profile?.role === 'admin') && (
+                    {/* Interviewer/Admin Action */}
+                    {(profile?.role === 'INTERVIEWER' || profile?.role === 'admin' || profile?.role === 'ADMIN') && (
                         <Button
                             onClick={() => setShowCreateForm(true)}
                             className="rounded-full bg-brand-cyan hover:bg-brand-cyan/90 shadow-lg shadow-cyan-100 dark:shadow-cyan-900/30"
@@ -411,7 +411,7 @@ export function LessonLibraryPage() {
                                     {selectedLesson.description}
                                 </p>
                                 <p className="text-slate-600 dark:text-slate-300 leading-relaxed mt-3">
-                                    Bài học này sẽ giúp bạn nắm vững các kỹ năng cần thiết và chuẩn bị tốt nhất cho buổi phỏng vấn. 
+                                    Bài học này sẽ giúp bạn nắm vững các kỹ năng cần thiết và chuẩn bị tốt nhất cho buổi phỏng vấn.
                                     Với các câu hỏi được thiết kế sát với thực tế, bạn sẽ tự tin hơn khi đối mặt với nhà tuyển dụng.
                                 </p>
                                 <ul className="mt-4 space-y-2 text-slate-600 dark:text-slate-300">

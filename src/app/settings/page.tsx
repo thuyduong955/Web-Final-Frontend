@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import api from '@/services/api';
+import uploadService from '@/services/uploadService';
 import MainLayout from '@/components/layout/MainLayout';
 import DefaultAvatar from '@/assets/sidebar-avatar.png';
 
@@ -59,6 +60,8 @@ function SettingsContent() {
     });
     const [originalProfileData, setOriginalProfileData] = useState(profileData);
     const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+    const [avatarFile, setAvatarFile] = useState<File | null>(null);
+    const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
     const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
     const [profileMessage, setProfileMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
@@ -103,17 +106,24 @@ function SettingsContent() {
     const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setAvatarPreview(reader.result as string);
-            };
-            reader.readAsDataURL(file);
+            try {
+                uploadService.validateImageFile(file, 5);
+                setAvatarFile(file);
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    setAvatarPreview(reader.result as string);
+                };
+                reader.readAsDataURL(file);
+            } catch (error: any) {
+                setProfileMessage({ type: 'error', text: error.message });
+            }
         }
     };
 
     const handleCancelEdit = () => {
         setProfileData(originalProfileData);
         setAvatarPreview(null);
+        setAvatarFile(null);
         setIsEditMode(false);
         setProfileMessage(null);
     };
@@ -128,6 +138,21 @@ function SettingsContent() {
         setProfileMessage(null);
 
         try {
+            let avatarUrl = profileData.avatar;
+
+            // Upload avatar to R2 if changed
+            if (avatarFile) {
+                setIsUploadingAvatar(true);
+                try {
+                    avatarUrl = await uploadService.uploadAvatar(avatarFile);
+                } catch (uploadError: any) {
+                    setProfileMessage({ type: 'error', text: 'Lỗi tải ảnh: ' + uploadError.message });
+                    return;
+                } finally {
+                    setIsUploadingAvatar(false);
+                }
+            }
+
             await api.put('/auth/profile', {
                 name: profileData.fullName,
                 phone: profileData.phone,
@@ -135,9 +160,12 @@ function SettingsContent() {
                 bio: profileData.bio,
                 gender: profileData.gender || null,
                 dateOfBirth: profileData.dateOfBirth || null,
+                avatar: avatarUrl,
             });
             setProfileMessage({ type: 'success', text: 'Cập nhật thành công!' });
-            setOriginalProfileData(profileData);
+            setOriginalProfileData({ ...profileData, avatar: avatarUrl });
+            setAvatarFile(null);
+            setAvatarPreview(null);
             setIsEditMode(false);
         } catch (error: any) {
             setProfileMessage({
