@@ -102,10 +102,10 @@ const StarRating = ({ rating }: { rating: number }) => {
                 <Star
                     key={star}
                     className={`w-4 h-4 ${star <= Math.floor(rating)
-                            ? 'text-yellow-400 fill-yellow-400'
-                            : star - 0.5 <= rating
-                                ? 'text-yellow-400 fill-yellow-400/50'
-                                : 'text-gray-300 dark:text-gray-600'
+                        ? 'text-yellow-400 fill-yellow-400'
+                        : star - 0.5 <= rating
+                            ? 'text-yellow-400 fill-yellow-400/50'
+                            : 'text-gray-300 dark:text-gray-600'
                         }`}
                 />
             ))}
@@ -143,8 +143,8 @@ const InteractiveStarRating = ({
                 >
                     <Star
                         className={`${sizeClasses[size]} transition-colors ${star <= (hoverRating || rating)
-                                ? 'text-yellow-400 fill-yellow-400'
-                                : 'text-gray-300 dark:text-gray-600'
+                            ? 'text-yellow-400 fill-yellow-400'
+                            : 'text-gray-300 dark:text-gray-600'
                             }`}
                     />
                 </button>
@@ -322,8 +322,8 @@ export const Training1v1: React.FC = () => {
                             variant={activeTab === 'interviewers' ? 'default' : 'outline'}
                             onClick={() => setActiveTab('interviewers')}
                             className={`flex items-center gap-2 px-6 py-3 ${activeTab === 'interviewers'
-                                    ? 'bg-cyan-500 hover:bg-cyan-600 text-white'
-                                    : ''
+                                ? 'bg-cyan-500 hover:bg-cyan-600 text-white'
+                                : ''
                                 }`}
                         >
                             <Users className="w-5 h-5" />
@@ -333,8 +333,8 @@ export const Training1v1: React.FC = () => {
                             variant={activeTab === 'scheduled' ? 'default' : 'outline'}
                             onClick={() => setActiveTab('scheduled')}
                             className={`flex items-center gap-2 px-6 py-3 ${activeTab === 'scheduled'
-                                    ? 'bg-cyan-500 hover:bg-cyan-600 text-white'
-                                    : ''
+                                ? 'bg-cyan-500 hover:bg-cyan-600 text-white'
+                                : ''
                                 }`}
                         >
                             <ListChecks className="w-5 h-5" />
@@ -349,8 +349,8 @@ export const Training1v1: React.FC = () => {
                             variant={activeTab === 'reviews' ? 'default' : 'outline'}
                             onClick={() => setActiveTab('reviews')}
                             className={`flex items-center gap-2 px-6 py-3 ${activeTab === 'reviews'
-                                    ? 'bg-yellow-500 hover:bg-yellow-600 text-white'
-                                    : ''
+                                ? 'bg-yellow-500 hover:bg-yellow-600 text-white'
+                                : ''
                                 }`}
                         >
                             <Star className="w-5 h-5" />
@@ -436,9 +436,9 @@ export const Training1v1: React.FC = () => {
                                         <Button
                                             className="flex-1 bg-green-500 hover:bg-green-600 text-white"
                                             onClick={() => {
-                                                // Start instant call
-                                                const roomId = `instant-${interviewer.id}-${Date.now()}`;
-                                                router.push(`/interview/video-call?id=${roomId}&interviewer=${encodeURIComponent(interviewer.name)}`);
+                                                // Create room with interviewer ID for 2-person call
+                                                const roomId = `room-${interviewer.id}`;
+                                                router.push(`/training1v1/call?room=${roomId}&role=interviewee`);
                                             }}
                                         >
                                             <Video className="w-4 h-4 mr-2 text-white" />
@@ -919,8 +919,8 @@ export const Training1v1: React.FC = () => {
                                                 type="button"
                                                 onClick={() => setSelectedTime(time)}
                                                 className={`px-3 py-2.5 text-sm font-medium rounded-xl border-2 transition-all duration-200 ${selectedTime === time
-                                                        ? 'bg-gradient-to-r from-cyan-500 to-cyan-600 text-white border-cyan-500 shadow-lg shadow-cyan-500/25 scale-[1.02]'
-                                                        : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-600 hover:border-cyan-400 dark:hover:border-cyan-500 hover:bg-cyan-50 dark:hover:bg-cyan-900/20'
+                                                    ? 'bg-gradient-to-r from-cyan-500 to-cyan-600 text-white border-cyan-500 shadow-lg shadow-cyan-500/25 scale-[1.02]'
+                                                    : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-600 hover:border-cyan-400 dark:hover:border-cyan-500 hover:bg-cyan-50 dark:hover:bg-cyan-900/20'
                                                     }`}
                                             >
                                                 {time}

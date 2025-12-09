@@ -231,13 +231,25 @@ export function LessonLibraryPage() {
 
     const handleStartLesson = () => {
         if (selectedLesson) {
-            router.push(`/interview/${selectedLesson.id}`);
+            // If has file attachments, open first file
+            if (selectedLesson.fileUrls && selectedLesson.fileUrls.length > 0) {
+                window.open(selectedLesson.fileUrls[0], '_blank');
+            } else {
+                // Fallback to interview page
+                router.push(`/interview/${selectedLesson.id}`);
+            }
         }
     };
 
     const handleWatchVideo = () => {
         if (selectedLesson) {
-            router.push(`/lesson/video?topic=${encodeURIComponent(selectedLesson.title)}&lessonId=${selectedLesson.id}`);
+            // If has video URL from R2, open it directly
+            if (selectedLesson.videoUrl) {
+                window.open(selectedLesson.videoUrl, '_blank');
+            } else {
+                // Fallback to lesson/video page
+                router.push(`/lesson/video?topic=${encodeURIComponent(selectedLesson.title)}&lessonId=${selectedLesson.id}`);
+            }
         }
     };
 

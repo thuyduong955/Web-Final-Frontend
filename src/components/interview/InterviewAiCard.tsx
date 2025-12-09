@@ -53,6 +53,10 @@ export interface InterviewAiCardProps {
     tags?: string[];
     category?: string;
     questions?: string[];
+    videoUrl?: string;
+    fileUrls?: string[];
+    thumbnailUrl?: string;
+    authorName?: string;
     onOpen?: () => void;
 }
 
