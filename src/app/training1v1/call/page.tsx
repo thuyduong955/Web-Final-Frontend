@@ -97,11 +97,20 @@ function VideoCallContent() {
     useEffect(() => {
         if (!roomId || !localStream) return;
 
-        // Construct WebSocket URL - use the API URL base
+        // Construct WebSocket URL from API URL
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
-        // Remove /api suffix to get base URL
-        const baseUrl = apiUrl.replace('/api', '').replace(/\/$/, '');
+        // Parse the URL properly to get just the origin (protocol + host)
+        let baseUrl: string;
+        try {
+            const url = new URL(apiUrl);
+            baseUrl = url.origin; // e.g., https://api.nervis.dev
+        } catch {
+            // Fallback: remove /api suffix and trailing slash
+            baseUrl = apiUrl.replace(/\/api\/?$/, '').replace(/\/$/, '');
+        }
 
+        console.log('[VideoCall] API URL:', apiUrl);
+        console.log('[VideoCall] Base URL:', baseUrl);
         console.log('[VideoCall] Connecting to:', `${baseUrl}/video-call`);
         setConnectionState('Đang kết nối server...');
 
@@ -508,8 +517,8 @@ function VideoCallContent() {
                         {chatMessages.map((msg, idx) => (
                             <div key={idx} className={`${msg.userId === userId ? 'text-right' : 'text-left'}`}>
                                 <div className={`inline-block px-3 py-2 rounded-lg max-w-[85%] ${msg.userId === userId
-                                        ? 'bg-cyan-500 text-white'
-                                        : 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white'
+                                    ? 'bg-cyan-500 text-white'
+                                    : 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white'
                                     }`}>
                                     {msg.userId !== userId && (
                                         <p className="text-xs opacity-70 mb-1">{msg.userName}</p>
