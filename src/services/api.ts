@@ -2,9 +2,7 @@ import axios from 'axios';
 
 const api = axios.create({
     baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002',
-    headers: {
-        'Content-Type': 'application/json',
-    },
+    // Don't set default Content-Type - axios will auto-detect FormData vs JSON
 });
 
 api.interceptors.request.use((config) => {
