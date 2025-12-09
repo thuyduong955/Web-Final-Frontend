@@ -185,20 +185,20 @@ export const QuestionBucketForm: React.FC<QuestionBucketFormProps> = ({ onSucces
                 setUploadProgress(90);
             }
 
-            // Step 5: Update content with file URLs and submit for review
+            // Step 5: Update content with file URLs and publish directly (for demo)
             setUploadStatus('Hoàn tất...');
             await api.put(`/library/${contentId}`, {
                 thumbnailUrl,
                 videoUrl,
                 fileUrls,
-                status: 'PENDING_REVIEW',
+                status: 'PUBLISHED', // Auto-publish for demo
             });
             setUploadProgress(100);
 
             setNotification({
                 isOpen: true,
-                title: 'Đã gửi thành công!',
-                description: 'Nội dung đã được gửi để xét duyệt.',
+                title: 'Đã tạo thành công!',
+                description: 'Nội dung đã được xuất bản.',
                 type: 'success'
             });
 
