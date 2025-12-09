@@ -101,13 +101,12 @@ const StarRating = ({ rating }: { rating: number }) => {
             {[1, 2, 3, 4, 5].map((star) => (
                 <Star
                     key={star}
-                    className={`w-4 h-4 ${
-                        star <= Math.floor(rating)
-                            ? 'text-yellow-400 fill-yellow-400'
-                            : star - 0.5 <= rating
+                    className={`w-4 h-4 ${star <= Math.floor(rating)
+                        ? 'text-yellow-400 fill-yellow-400'
+                        : star - 0.5 <= rating
                             ? 'text-yellow-400 fill-yellow-400/50'
                             : 'text-gray-300 dark:text-gray-600'
-                    }`}
+                        }`}
                 />
             ))}
         </div>
@@ -115,12 +114,12 @@ const StarRating = ({ rating }: { rating: number }) => {
 };
 
 // Interactive star rating for reviews
-const InteractiveStarRating = ({ 
-    rating, 
+const InteractiveStarRating = ({
+    rating,
     onRatingChange,
     size = 'md'
-}: { 
-    rating: number; 
+}: {
+    rating: number;
     onRatingChange: (rating: number) => void;
     size?: 'sm' | 'md' | 'lg';
 }) => {
@@ -130,7 +129,7 @@ const InteractiveStarRating = ({
         md: 'w-8 h-8',
         lg: 'w-10 h-10',
     };
-    
+
     return (
         <div className="flex items-center gap-1">
             {[1, 2, 3, 4, 5].map((star) => (
@@ -143,11 +142,10 @@ const InteractiveStarRating = ({
                     className="transition-transform hover:scale-110 focus:outline-none"
                 >
                     <Star
-                        className={`${sizeClasses[size]} transition-colors ${
-                            star <= (hoverRating || rating)
-                                ? 'text-yellow-400 fill-yellow-400'
-                                : 'text-gray-300 dark:text-gray-600'
-                        }`}
+                        className={`${sizeClasses[size]} transition-colors ${star <= (hoverRating || rating)
+                            ? 'text-yellow-400 fill-yellow-400'
+                            : 'text-gray-300 dark:text-gray-600'
+                            }`}
                     />
                 </button>
             ))}
@@ -164,14 +162,14 @@ export const Training1v1: React.FC = () => {
     const [selectedTime, setSelectedTime] = useState('');
     const [note, setNote] = useState('');
     const [activeTab, setActiveTab] = useState<'interviewers' | 'scheduled' | 'reviews'>('interviewers');
-    
+
     // Review states
     const [showReviewDialog, setShowReviewDialog] = useState(false);
     const [sessionToReview, setSessionToReview] = useState<ScheduledSession | null>(null);
     const [reviewRating, setReviewRating] = useState(0);
     const [reviewComment, setReviewComment] = useState('');
     const [showReviewPrompt, setShowReviewPrompt] = useState(false);
-    
+
     const { sessions: scheduledSessions, addSession, cancelSession, addReview, getUnreviewedCompletedSessions } = useScheduledSessions();
     const router = useRouter();
 
@@ -266,23 +264,23 @@ export const Training1v1: React.FC = () => {
     const parseAvailableTime = (availableTime: string): string[] => {
         const slots: string[] = [];
         const ranges = availableTime.split(',').map(r => r.trim());
-        
+
         for (const range of ranges) {
             const [start, end] = range.split('-').map(t => t.trim());
             if (!start || !end) continue;
-            
+
             const startHour = parseInt(start.split(':')[0]);
             const startMin = parseInt(start.split(':')[1] || '0');
             const endHour = parseInt(end.split(':')[0]);
             const endMin = parseInt(end.split(':')[1] || '0');
-            
+
             let currentHour = startHour;
             let currentMin = startMin;
-            
+
             while (currentHour < endHour || (currentHour === endHour && currentMin < endMin)) {
                 const timeStr = `${currentHour.toString().padStart(2, '0')}:${currentMin.toString().padStart(2, '0')}`;
                 slots.push(timeStr);
-                
+
                 currentMin += 30;
                 if (currentMin >= 60) {
                     currentMin = 0;
@@ -290,13 +288,13 @@ export const Training1v1: React.FC = () => {
                 }
             }
         }
-        
+
         return slots;
     };
 
     // Get available time slots for selected interviewer
-    const availableTimeSlots = selectedInterviewer 
-        ? parseAvailableTime(selectedInterviewer.availableTime) 
+    const availableTimeSlots = selectedInterviewer
+        ? parseAvailableTime(selectedInterviewer.availableTime)
         : [];
 
     return (
@@ -323,11 +321,10 @@ export const Training1v1: React.FC = () => {
                         <Button
                             variant={activeTab === 'interviewers' ? 'default' : 'outline'}
                             onClick={() => setActiveTab('interviewers')}
-                            className={`flex items-center gap-2 px-6 py-3 ${
-                                activeTab === 'interviewers' 
-                                    ? 'bg-cyan-500 hover:bg-cyan-600 text-white' 
-                                    : ''
-                            }`}
+                            className={`flex items-center gap-2 px-6 py-3 ${activeTab === 'interviewers'
+                                ? 'bg-cyan-500 hover:bg-cyan-600 text-white'
+                                : ''
+                                }`}
                         >
                             <Users className="w-5 h-5" />
                             Danh sách Interviewer
@@ -335,11 +332,10 @@ export const Training1v1: React.FC = () => {
                         <Button
                             variant={activeTab === 'scheduled' ? 'default' : 'outline'}
                             onClick={() => setActiveTab('scheduled')}
-                            className={`flex items-center gap-2 px-6 py-3 ${
-                                activeTab === 'scheduled' 
-                                    ? 'bg-cyan-500 hover:bg-cyan-600 text-white' 
-                                    : ''
-                            }`}
+                            className={`flex items-center gap-2 px-6 py-3 ${activeTab === 'scheduled'
+                                ? 'bg-cyan-500 hover:bg-cyan-600 text-white'
+                                : ''
+                                }`}
                         >
                             <ListChecks className="w-5 h-5" />
                             Lịch đã đặt
@@ -352,11 +348,10 @@ export const Training1v1: React.FC = () => {
                         <Button
                             variant={activeTab === 'reviews' ? 'default' : 'outline'}
                             onClick={() => setActiveTab('reviews')}
-                            className={`flex items-center gap-2 px-6 py-3 ${
-                                activeTab === 'reviews' 
-                                    ? 'bg-yellow-500 hover:bg-yellow-600 text-white' 
-                                    : ''
-                            }`}
+                            className={`flex items-center gap-2 px-6 py-3 ${activeTab === 'reviews'
+                                ? 'bg-yellow-500 hover:bg-yellow-600 text-white'
+                                : ''
+                                }`}
                         >
                             <Star className="w-5 h-5" />
                             Đánh giá
@@ -372,81 +367,95 @@ export const Training1v1: React.FC = () => {
                     {activeTab === 'interviewers' ? (
                         /* Interviewer List */
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {INTERVIEWERS.map((interviewer) => (
-                            <Card
-                                key={interviewer.id}
-                                className="p-5 hover:shadow-lg transition-all duration-200 hover:border-cyan-300 dark:hover:border-cyan-600"
-                            >
-                                {/* Header */}
-                                <div className="flex items-start gap-4 mb-4">
-                                    <Avatar className="w-14 h-14 border-2 border-cyan-100 dark:border-cyan-800">
-                                        {interviewer.avatar && <AvatarImage src={interviewer.avatar} />}
-                                        <AvatarFallback className="bg-cyan-100 dark:bg-cyan-900 text-cyan-600 dark:text-cyan-300 font-bold text-lg">
-                                            {interviewer.name.split(' ').pop()?.[0]}
-                                        </AvatarFallback>
-                                    </Avatar>
-                                    <div className="flex-1 min-w-0">
-                                        <h3 className="font-semibold text-slate-900 dark:text-white truncate">
-                                            {interviewer.name}
-                                        </h3>
-                                        <p className="text-sm text-slate-500 dark:text-slate-400 truncate">
-                                            {interviewer.role}
-                                        </p>
-                                        <p className="text-sm text-cyan-600 dark:text-cyan-400 font-medium">
-                                            {interviewer.company}
-                                        </p>
-                                    </div>
-                                </div>
-
-                                {/* Rating */}
-                                <div className="flex items-center gap-2 mb-3">
-                                    <StarRating rating={interviewer.rating} />
-                                    <span className="text-sm font-medium text-slate-900 dark:text-white">
-                                        {interviewer.rating}
-                                    </span>
-                                    <span className="text-sm text-slate-500 dark:text-slate-400">
-                                        ({interviewer.totalReviews} đánh giá)
-                                    </span>
-                                </div>
-
-                                {/* Experience */}
-                                <p className="text-sm text-slate-600 dark:text-slate-300 mb-3">
-                                    {interviewer.experience}
-                                </p>
-
-                                {/* Specialties */}
-                                <div className="flex flex-wrap gap-1.5 mb-4">
-                                    {interviewer.specialties.map((specialty) => (
-                                        <span
-                                            key={specialty}
-                                            className="px-2 py-0.5 text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-full"
-                                        >
-                                            {specialty}
-                                        </span>
-                                    ))}
-                                </div>
-
-                                {/* Available Time */}
-                                <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 mb-4 pb-4 border-b border-slate-100 dark:border-slate-700">
-                                    <Clock className="w-4 h-4 text-green-500" />
-                                    <span>Thời gian nhận phỏng vấn:</span>
-                                </div>
-                                <div className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 mb-4">
-                                    <Calendar className="w-4 h-4 text-cyan-500 dark:text-cyan-400" />
-                                    <span>{interviewer.availableTime}</span>
-                                </div>
-
-                                {/* Action Button */}
-                                <Button
-                                    className="w-full bg-cyan-500 hover:bg-cyan-600 text-white"
-                                    onClick={() => handleOpenSchedule(interviewer)}
+                            {INTERVIEWERS.map((interviewer) => (
+                                <Card
+                                    key={interviewer.id}
+                                    className="p-5 hover:shadow-lg transition-all duration-200 hover:border-cyan-300 dark:hover:border-cyan-600"
                                 >
-                                    <Calendar className="w-4 h-4 mr-2 text-white" />
-                                    Đặt lịch phỏng vấn
-                                </Button>
-                            </Card>
-                        ))}
-                    </div>
+                                    {/* Header */}
+                                    <div className="flex items-start gap-4 mb-4">
+                                        <Avatar className="w-14 h-14 border-2 border-cyan-100 dark:border-cyan-800">
+                                            {interviewer.avatar && <AvatarImage src={interviewer.avatar} />}
+                                            <AvatarFallback className="bg-cyan-100 dark:bg-cyan-900 text-cyan-600 dark:text-cyan-300 font-bold text-lg">
+                                                {interviewer.name.split(' ').pop()?.[0]}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                        <div className="flex-1 min-w-0">
+                                            <h3 className="font-semibold text-slate-900 dark:text-white truncate">
+                                                {interviewer.name}
+                                            </h3>
+                                            <p className="text-sm text-slate-500 dark:text-slate-400 truncate">
+                                                {interviewer.role}
+                                            </p>
+                                            <p className="text-sm text-cyan-600 dark:text-cyan-400 font-medium">
+                                                {interviewer.company}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {/* Rating */}
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <StarRating rating={interviewer.rating} />
+                                        <span className="text-sm font-medium text-slate-900 dark:text-white">
+                                            {interviewer.rating}
+                                        </span>
+                                        <span className="text-sm text-slate-500 dark:text-slate-400">
+                                            ({interviewer.totalReviews} đánh giá)
+                                        </span>
+                                    </div>
+
+                                    {/* Experience */}
+                                    <p className="text-sm text-slate-600 dark:text-slate-300 mb-3">
+                                        {interviewer.experience}
+                                    </p>
+
+                                    {/* Specialties */}
+                                    <div className="flex flex-wrap gap-1.5 mb-4">
+                                        {interviewer.specialties.map((specialty) => (
+                                            <span
+                                                key={specialty}
+                                                className="px-2 py-0.5 text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-full"
+                                            >
+                                                {specialty}
+                                            </span>
+                                        ))}
+                                    </div>
+
+                                    {/* Available Time */}
+                                    <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 mb-4 pb-4 border-b border-slate-100 dark:border-slate-700">
+                                        <Clock className="w-4 h-4 text-green-500" />
+                                        <span>Thời gian nhận phỏng vấn:</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 mb-4">
+                                        <Calendar className="w-4 h-4 text-cyan-500 dark:text-cyan-400" />
+                                        <span>{interviewer.availableTime}</span>
+                                    </div>
+
+                                    {/* Action Buttons */}
+                                    <div className="flex gap-2">
+                                        <Button
+                                            className="flex-1 bg-green-500 hover:bg-green-600 text-white"
+                                            onClick={() => {
+                                                // Create room with interviewer ID for 2-person call
+                                                const roomId = `room-${interviewer.id}`;
+                                                router.push(`/training1v1/call?room=${roomId}&role=interviewee`);
+                                            }}
+                                        >
+                                            <Video className="w-4 h-4 mr-2 text-white" />
+                                            Gọi ngay
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            className="flex-1 border-cyan-300 text-cyan-600 hover:bg-cyan-50 dark:border-cyan-700 dark:text-cyan-400 dark:hover:bg-cyan-900/20"
+                                            onClick={() => handleOpenSchedule(interviewer)}
+                                        >
+                                            <Calendar className="w-4 h-4 mr-2" />
+                                            Đặt lịch
+                                        </Button>
+                                    </div>
+                                </Card>
+                            ))}
+                        </div>
                     ) : activeTab === 'scheduled' ? (
                         /* Scheduled Sessions List */
                         <div className="space-y-6">
@@ -563,7 +572,7 @@ export const Training1v1: React.FC = () => {
                                                                     {session.time}
                                                                 </span>
                                                             </div>
-                                                            
+
                                                             {/* Review Section */}
                                                             {session.review ? (
                                                                 <div className="mt-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
@@ -792,7 +801,7 @@ export const Training1v1: React.FC = () => {
                                                                     {formatDate(session.date)}
                                                                 </span>
                                                             </div>
-                                                            
+
                                                             {/* Review Display */}
                                                             {session.review && (
                                                                 <div className="mt-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
@@ -808,9 +817,9 @@ export const Training1v1: React.FC = () => {
                                                                         </p>
                                                                     )}
                                                                     <p className="text-xs text-slate-400 dark:text-slate-500 mt-2">
-                                                                        Đánh giá lúc: {new Date(session.review.createdAt).toLocaleDateString('vi-VN', { 
-                                                                            year: 'numeric', 
-                                                                            month: 'long', 
+                                                                        Đánh giá lúc: {new Date(session.review.createdAt).toLocaleDateString('vi-VN', {
+                                                                            year: 'numeric',
+                                                                            month: 'long',
                                                                             day: 'numeric',
                                                                             hour: '2-digit',
                                                                             minute: '2-digit'
@@ -848,7 +857,7 @@ export const Training1v1: React.FC = () => {
                                             <p className="text-3xl font-bold text-yellow-600 dark:text-yellow-400">
                                                 {(scheduledSessions
                                                     .filter(s => s.review)
-                                                    .reduce((acc, s) => acc + (s.review?.rating || 0), 0) / 
+                                                    .reduce((acc, s) => acc + (s.review?.rating || 0), 0) /
                                                     scheduledSessions.filter(s => s.review).length
                                                 ).toFixed(1)}
                                             </p>
@@ -909,11 +918,10 @@ export const Training1v1: React.FC = () => {
                                                 key={time}
                                                 type="button"
                                                 onClick={() => setSelectedTime(time)}
-                                                className={`px-3 py-2.5 text-sm font-medium rounded-xl border-2 transition-all duration-200 ${
-                                                    selectedTime === time
-                                                        ? 'bg-gradient-to-r from-cyan-500 to-cyan-600 text-white border-cyan-500 shadow-lg shadow-cyan-500/25 scale-[1.02]'
-                                                        : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-600 hover:border-cyan-400 dark:hover:border-cyan-500 hover:bg-cyan-50 dark:hover:bg-cyan-900/20'
-                                                }`}
+                                                className={`px-3 py-2.5 text-sm font-medium rounded-xl border-2 transition-all duration-200 ${selectedTime === time
+                                                    ? 'bg-gradient-to-r from-cyan-500 to-cyan-600 text-white border-cyan-500 shadow-lg shadow-cyan-500/25 scale-[1.02]'
+                                                    : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-600 hover:border-cyan-400 dark:hover:border-cyan-500 hover:bg-cyan-50 dark:hover:bg-cyan-900/20'
+                                                    }`}
                                             >
                                                 {time}
                                             </button>

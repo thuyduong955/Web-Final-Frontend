@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useCallback, useContext } from 'react';
-import api from '@/services/api';
+import api from '@/lib/api-client';
 import type { AuthContextType, User, UserProfile, UserRole, AuthError } from './auth-types';
 import { useRouter } from 'next/navigation';
 
@@ -38,7 +38,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         full_name: userData.name || '',
         role: userData.role,
         avatar_url: userData.avatar,
-        profile_data: {},
+        profile_data: {
+          phone: userData.phone,
+          location: userData.location,
+          bio: userData.bio,
+          gender: userData.gender,
+          dateOfBirth: userData.dateOfBirth,
+        },
         created_at: userData.createdAt,
         updated_at: userData.updatedAt || new Date().toISOString()
       };
@@ -70,7 +76,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         email,
         password,
         name: userData.full_name,
-        role: userData.role === 'job_seeker' ? 'USER' : 'INTERVIEWER' // Map roles
+        role: userData.role // Already 'INTERVIEWEE' or 'INTERVIEWER' from SignUpForm
       });
       // Auto login after register? Or require login?
       // For now, let's require login
@@ -95,7 +101,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     localStorage.removeItem('access_token');
     setUser(null);
     setProfile(null);
-    router.push('/auth/login');
+    router.push('/login');
     return { error: null };
   };
 

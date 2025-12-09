@@ -133,7 +133,9 @@ export const Training1v1Interviewer: React.FC = () => {
     };
 
     const handleJoinCall = (session: BookedSession) => {
-        router.push(`/interview/video-call?id=${session.id}&interviewer=${encodeURIComponent(session.intervieweeName)}`);
+        // Use session ID as room ID so both users join same room
+        const roomId = `room-${session.id}`;
+        router.push(`/training1v1/call?room=${roomId}&role=interviewer`);
     };
 
     const formatDate = (dateStr: string) => {
@@ -168,11 +170,10 @@ export const Training1v1Interviewer: React.FC = () => {
                     <Button
                         variant={activeTab === 'bookings' ? 'default' : 'outline'}
                         onClick={() => setActiveTab('bookings')}
-                        className={`flex items-center gap-2 px-6 py-3 ${
-                            activeTab === 'bookings'
+                        className={`flex items-center gap-2 px-6 py-3 ${activeTab === 'bookings'
                                 ? 'bg-cyan-500 hover:bg-cyan-600 text-white'
                                 : ''
-                        }`}
+                            }`}
                     >
                         <Users className="w-5 h-5" />
                         Danh sách đăng ký
@@ -185,11 +186,10 @@ export const Training1v1Interviewer: React.FC = () => {
                     <Button
                         variant={activeTab === 'schedule' ? 'default' : 'outline'}
                         onClick={() => setActiveTab('schedule')}
-                        className={`flex items-center gap-2 px-6 py-3 ${
-                            activeTab === 'schedule'
+                        className={`flex items-center gap-2 px-6 py-3 ${activeTab === 'schedule'
                                 ? 'bg-cyan-500 hover:bg-cyan-600 text-white'
                                 : ''
-                        }`}
+                            }`}
                     >
                         <Settings className="w-5 h-5" />
                         Cài đặt lịch rảnh
@@ -440,7 +440,7 @@ export const Training1v1Interviewer: React.FC = () => {
 
                         <Card className="p-4 bg-slate-50 dark:bg-slate-800/50">
                             <p className="text-sm text-slate-600 dark:text-slate-400">
-                                <strong>Lưu ý:</strong> Interviewee có thể đặt lịch trong các khung giờ bạn đã thiết lập. 
+                                <strong>Lưu ý:</strong> Interviewee có thể đặt lịch trong các khung giờ bạn đã thiết lập.
                                 Hãy đảm bảo cập nhật lịch rảnh thường xuyên để tránh xung đột.
                             </p>
                         </Card>
