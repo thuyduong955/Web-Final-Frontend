@@ -112,7 +112,7 @@ export function NotificationDropdown() {
 
         // Navigate based on notification type
         if (notification.data?.bookingId) {
-            router.push('/bookings');
+            router.push('/training1v1');
         } else if (notification.data?.contentId) {
             router.push(`/library/${notification.data.contentId}`);
         }

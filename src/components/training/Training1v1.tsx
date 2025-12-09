@@ -1,135 +1,89 @@
-import React, { useState, useEffect } from 'react';
+"use client";
+
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { VideoCallInterface } from '@/components/training/VideoCallInterface';
+import api from '@/services/api';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { DateInput } from '@/components/ui/date-input';
+import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { UserProfilePopup } from '@/components/user/UserProfilePopup';
 import {
-    AlertDialog,
-    AlertDialogContent,
-    AlertDialogHeader,
-    AlertDialogFooter,
-    AlertDialogTitle,
-    AlertDialogDescription,
-    AlertDialogAction,
-    AlertDialogCancel,
-} from '@/components/ui/alert-dialog';
-import { Home, Star, Clock, Calendar, Video, CheckCircle, X, Users, ListChecks, MessageSquare } from 'lucide-react';
-import { useScheduledSessions, ScheduledSession } from '@/contexts/ScheduledSessionsContext';
+    Star, Clock, Calendar, Video, CheckCircle, X, Users, ListChecks,
+    Loader2, AlertCircle, RefreshCw
+} from 'lucide-react';
+
+// ═══════════════════════════════════════════════════════════════
+// TYPES
+// ═══════════════════════════════════════════════════════════════
+interface InterviewerProfile {
+    title: string | null;
+    company: string | null;
+    bio: string | null;
+    skills: string[];
+    experience: number;
+    hourlyRate: number;
+    rating: number;
+    totalReviews: number;
+    totalSessions: number;
+}
 
 interface Interviewer {
     id: string;
     name: string;
-    avatar: string;
-    role: string;
-    company: string;
-    rating: number;
-    totalReviews: number;
-    availableTime: string;
-    specialties: string[];
-    experience: string;
+    avatar: string | null;
+    interviewerProfile: InterviewerProfile | null;
 }
 
-const INTERVIEWERS: Interviewer[] = [
-    {
-        id: '1',
-        name: 'Nguyễn Văn An',
-        avatar: '',
-        role: 'Senior Software Engineer',
-        company: 'Google',
-        rating: 4.9,
-        totalReviews: 128,
-        availableTime: '9:00 - 12:00, 14:00 - 18:00',
-        specialties: ['Frontend', 'React', 'System Design'],
-        experience: '8 năm kinh nghiệm',
-    },
-    {
-        id: '2',
-        name: 'Trần Thị Bình',
-        avatar: '',
-        role: 'Engineering Manager',
-        company: 'Microsoft',
-        rating: 4.8,
-        totalReviews: 95,
-        availableTime: '10:00 - 12:00, 15:00 - 17:00',
-        specialties: ['Backend', 'Java', 'Leadership'],
-        experience: '10 năm kinh nghiệm',
-    },
-    {
-        id: '3',
-        name: 'Lê Minh Cường',
-        avatar: '',
-        role: 'Tech Lead',
-        company: 'VNG Corporation',
-        rating: 4.7,
-        totalReviews: 76,
-        availableTime: '8:00 - 11:00, 13:00 - 16:00',
-        specialties: ['Full-stack', 'Node.js', 'AWS'],
-        experience: '6 năm kinh nghiệm',
-    },
-    {
-        id: '4',
-        name: 'Phạm Hoàng Dũng',
-        avatar: '',
-        role: 'Principal Engineer',
-        company: 'Shopee',
-        rating: 4.9,
-        totalReviews: 152,
-        availableTime: '9:00 - 11:00, 14:00 - 17:00',
-        specialties: ['Algorithms', 'Data Structures', 'System Design'],
-        experience: '12 năm kinh nghiệm',
-    },
-    {
-        id: '5',
-        name: 'Hoàng Thị Mai',
-        avatar: '',
-        role: 'Senior Product Manager',
-        company: 'Grab',
-        rating: 4.6,
-        totalReviews: 64,
-        availableTime: '10:00 - 12:00, 14:00 - 16:00',
-        specialties: ['Product Sense', 'Strategy', 'Communication'],
-        experience: '7 năm kinh nghiệm',
-    },
-];
+interface Booking {
+    id: string;
+    startTime: string;
+    endTime: string;
+    duration: number;
+    status: 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED' | 'EXPIRED';
+    meetingLink: string | null;
+    note: string | null;
+    cancelReason: string | null;
+    mentor: {
+        id: string;
+        name: string;
+        avatar: string | null;
+        interviewerProfile?: InterviewerProfile | null;
+    };
+    review?: {
+        id: string;
+        rating: number;
+        comment?: string;
+    } | null;
+}
 
-const StarRating = ({ rating }: { rating: number }) => {
-    return (
-        <div className="flex items-center gap-1">
-            {[1, 2, 3, 4, 5].map((star) => (
-                <Star
-                    key={star}
-                    className={`w-4 h-4 ${star <= Math.floor(rating)
-                        ? 'text-yellow-400 fill-yellow-400'
-                        : star - 0.5 <= rating
-                            ? 'text-yellow-400 fill-yellow-400/50'
-                            : 'text-gray-300 dark:text-gray-600'
-                        }`}
-                />
-            ))}
-        </div>
-    );
-};
+// ═══════════════════════════════════════════════════════════════
+// STAR RATING COMPONENTS
+// ═══════════════════════════════════════════════════════════════
+const StarRating = ({ rating }: { rating: number }) => (
+    <div className="flex items-center gap-0.5">
+        {[1, 2, 3, 4, 5].map((star) => (
+            <Star
+                key={star}
+                className={`w-4 h-4 ${star <= Math.floor(rating)
+                    ? 'text-yellow-400 fill-yellow-400'
+                    : 'text-gray-300 dark:text-gray-600'
+                    }`}
+            />
+        ))}
+    </div>
+);
 
-// Interactive star rating for reviews
 const InteractiveStarRating = ({
     rating,
     onRatingChange,
-    size = 'md'
 }: {
     rating: number;
     onRatingChange: (rating: number) => void;
-    size?: 'sm' | 'md' | 'lg';
 }) => {
-    const [hoverRating, setHoverRating] = useState(0);
-    const sizeClasses = {
-        sm: 'w-5 h-5',
-        md: 'w-8 h-8',
-        lg: 'w-10 h-10',
-    };
-
+    const [hover, setHover] = useState(0);
     return (
         <div className="flex items-center gap-1">
             {[1, 2, 3, 4, 5].map((star) => (
@@ -137,14 +91,14 @@ const InteractiveStarRating = ({
                     key={star}
                     type="button"
                     onClick={() => onRatingChange(star)}
-                    onMouseEnter={() => setHoverRating(star)}
-                    onMouseLeave={() => setHoverRating(0)}
-                    className="transition-transform hover:scale-110 focus:outline-none"
+                    onMouseEnter={() => setHover(star)}
+                    onMouseLeave={() => setHover(0)}
+                    className="focus:outline-none"
                 >
                     <Star
-                        className={`${sizeClasses[size]} transition-colors ${star <= (hoverRating || rating)
+                        className={`w-8 h-8 transition-colors ${star <= (hover || rating)
                             ? 'text-yellow-400 fill-yellow-400'
-                            : 'text-gray-300 dark:text-gray-600'
+                            : 'text-gray-300'
                             }`}
                     />
                 </button>
@@ -153,599 +107,545 @@ const InteractiveStarRating = ({
     );
 };
 
+// ═══════════════════════════════════════════════════════════════
+// DEFAULT TIME SLOTS
+// ═══════════════════════════════════════════════════════════════
+const DEFAULT_TIME_SLOTS = [
+    '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
+    '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00'
+];
+
+// ═══════════════════════════════════════════════════════════════
+// MAIN COMPONENT
+// ═══════════════════════════════════════════════════════════════
 export const Training1v1: React.FC = () => {
-    const [activeCall, setActiveCall] = useState<{ roomId: string; partnerId: string } | null>(null);
-    const [selectedInterviewer, setSelectedInterviewer] = useState<Interviewer | null>(null);
-    const [showScheduleDialog, setShowScheduleDialog] = useState(false);
-    const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-    const [selectedDate, setSelectedDate] = useState('');
-    const [selectedTime, setSelectedTime] = useState('');
-    const [note, setNote] = useState('');
-    const [activeTab, setActiveTab] = useState<'interviewers' | 'scheduled' | 'reviews'>('interviewers');
-
-    // Review states
-    const [showReviewDialog, setShowReviewDialog] = useState(false);
-    const [sessionToReview, setSessionToReview] = useState<ScheduledSession | null>(null);
-    const [reviewRating, setReviewRating] = useState(0);
-    const [reviewComment, setReviewComment] = useState('');
-    const [showReviewPrompt, setShowReviewPrompt] = useState(false);
-
-    const { sessions: scheduledSessions, addSession, cancelSession, addReview, getUnreviewedCompletedSessions } = useScheduledSessions();
     const router = useRouter();
 
-    const handleOpenReview = (session: ScheduledSession) => {
-        setSessionToReview(session);
-        setReviewRating(0);
-        setReviewComment('');
-        setShowReviewDialog(true);
-        setShowReviewPrompt(false);
-    };
+    // Tab state
+    const [activeTab, setActiveTab] = useState<'interviewers' | 'scheduled' | 'reviews'>('interviewers');
 
-    const handleSubmitReview = () => {
-        if (sessionToReview && reviewRating > 0) {
-            addReview(sessionToReview.id, {
-                rating: reviewRating,
-                comment: reviewComment,
+    // Interviewers state
+    const [interviewers, setInterviewers] = useState<Interviewer[]>([]);
+    const [loadingInterviewers, setLoadingInterviewers] = useState(true);
+
+    // Bookings state
+    const [bookings, setBookings] = useState<Booking[]>([]);
+    const [loadingBookings, setLoadingBookings] = useState(false);
+
+    // UI state
+    const [error, setError] = useState<string | null>(null);
+    const [actionLoading, setActionLoading] = useState<string | null>(null);
+
+    // Booking dialog state
+    const [showBookingDialog, setShowBookingDialog] = useState(false);
+    const [selectedInterviewer, setSelectedInterviewer] = useState<Interviewer | null>(null);
+    const [selectedDate, setSelectedDate] = useState('');
+    const [selectedTime, setSelectedTime] = useState('');
+    const [bookingNote, setBookingNote] = useState('');
+    const [bookingLoading, setBookingLoading] = useState(false);
+
+    // Review dialog state
+    const [showReviewDialog, setShowReviewDialog] = useState(false);
+    const [bookingToReview, setBookingToReview] = useState<Booking | null>(null);
+    const [reviewRating, setReviewRating] = useState(0);
+    const [reviewComment, setReviewComment] = useState('');
+    const [reviewLoading, setReviewLoading] = useState(false);
+
+    // ═══════════════════════════════════════════════════════════════
+    // FETCH INTERVIEWERS
+    // ═══════════════════════════════════════════════════════════════
+    const fetchInterviewers = useCallback(async () => {
+        setLoadingInterviewers(true);
+        setError(null);
+        try {
+            const { data } = await api.get<{ data: Interviewer[] }>('/users/interviewers', {
+                params: { limit: 20, sortBy: 'rating' }
             });
-            setShowReviewDialog(false);
-            setSessionToReview(null);
-            setReviewRating(0);
-            setReviewComment('');
+            setInterviewers(data.data || []);
+        } catch (err) {
+            console.error('Error fetching interviewers:', err);
+            setError('Không thể tải danh sách interviewer');
         }
-    };
+        setLoadingInterviewers(false);
+    }, []);
 
-    const handleSkipReview = () => {
-        setShowReviewPrompt(false);
-        // Check if there are more unreviewed sessions
-        const unreviewedSessions = getUnreviewedCompletedSessions();
-        if (unreviewedSessions.length > 1) {
-            setSessionToReview(unreviewedSessions[1]);
-        } else {
-            setSessionToReview(null);
+    // ═══════════════════════════════════════════════════════════════
+    // FETCH BOOKINGS
+    // ═══════════════════════════════════════════════════════════════
+    const fetchBookings = useCallback(async () => {
+        setLoadingBookings(true);
+        try {
+            const { data } = await api.get<Booking[]>('/bookings');
+            setBookings(data || []);
+        } catch (err) {
+            console.error('Error fetching bookings:', err);
         }
-    };
+        setLoadingBookings(false);
+    }, []);
 
-    const handleOpenSchedule = (interviewer: Interviewer) => {
+    // ═══════════════════════════════════════════════════════════════
+    // INITIAL LOAD
+    // ═══════════════════════════════════════════════════════════════
+    useEffect(() => {
+        fetchInterviewers();
+        fetchBookings();
+    }, [fetchInterviewers, fetchBookings]);
+
+    // ═══════════════════════════════════════════════════════════════
+    // BOOKING HANDLERS
+    // ═══════════════════════════════════════════════════════════════
+    const handleOpenBooking = (interviewer: Interviewer) => {
         setSelectedInterviewer(interviewer);
         setSelectedDate('');
         setSelectedTime('');
-        setNote('');
-        setShowScheduleDialog(true);
+        setBookingNote('');
+        setShowBookingDialog(true);
     };
 
-    const handleConfirmSchedule = () => {
-        if (!selectedDate || !selectedTime) {
-            return;
-        }
-        setShowScheduleDialog(false);
-        setShowConfirmDialog(true);
-    };
+    const handleCreateBooking = async () => {
+        if (!selectedInterviewer || !selectedDate || !selectedTime) return;
 
-    const handleFinalConfirm = () => {
-        setShowConfirmDialog(false);
-        // Add new session to the context
-        if (selectedInterviewer && selectedDate && selectedTime) {
-            addSession({
-                interviewerId: selectedInterviewer.id,
-                interviewerName: selectedInterviewer.name,
-                interviewerRole: selectedInterviewer.role,
-                interviewerCompany: selectedInterviewer.company,
-                date: selectedDate,
-                time: selectedTime,
-                note: note || undefined,
-                status: 'upcoming',
+        setBookingLoading(true);
+        try {
+            const startTime = new Date(`${selectedDate}T${selectedTime}:00`);
+            const endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // 1 hour
+
+            await api.post('/bookings', {
+                mentorId: selectedInterviewer.id,
+                startTime: startTime.toISOString(),
+                endTime: endTime.toISOString(),
+                duration: 60,
+                note: bookingNote || undefined,
             });
+
+            setShowBookingDialog(false);
+            setSelectedInterviewer(null);
+            await fetchBookings();
+            setActiveTab('scheduled');
+        } catch (err: any) {
+            console.error('Error creating booking:', err);
+            alert(err.response?.data?.message || 'Không thể đặt lịch');
         }
-        setSelectedInterviewer(null);
-        // Switch to scheduled tab to show the new session
-        setActiveTab('scheduled');
+        setBookingLoading(false);
     };
 
-    const handleCancelSession = (sessionId: string) => {
-        cancelSession(sessionId);
+    const handleCancelBooking = async (bookingId: string) => {
+        if (!confirm('Bạn có chắc muốn hủy lịch hẹn này?')) return;
+
+        setActionLoading(bookingId);
+        try {
+            await api.post(`/bookings/${bookingId}/cancel`, { cancelReason: 'Hủy bởi người dùng' });
+            await fetchBookings();
+        } catch (err) {
+            console.error('Error cancelling booking:', err);
+            alert('Không thể hủy lịch hẹn');
+        }
+        setActionLoading(null);
     };
 
-    const handleJoinCall = (session: ScheduledSession) => {
-        router.push(`/interview/video-call?id=${session.id}&interviewer=${encodeURIComponent(session.interviewerName)}`);
-    };
-
-    const formatDate = (dateStr: string) => {
-        const date = new Date(dateStr);
-        return date.toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-    };
-
-    const handleEndCall = () => {
-        setActiveCall(null);
-        setSelectedInterviewer(null);
-    };
-
-    // Parse available time string to get time slots
-    // Format: "9:00 - 12:00, 14:00 - 18:00"
-    const parseAvailableTime = (availableTime: string): string[] => {
-        const slots: string[] = [];
-        const ranges = availableTime.split(',').map(r => r.trim());
-
-        for (const range of ranges) {
-            const [start, end] = range.split('-').map(t => t.trim());
-            if (!start || !end) continue;
-
-            const startHour = parseInt(start.split(':')[0]);
-            const startMin = parseInt(start.split(':')[1] || '0');
-            const endHour = parseInt(end.split(':')[0]);
-            const endMin = parseInt(end.split(':')[1] || '0');
-
-            let currentHour = startHour;
-            let currentMin = startMin;
-
-            while (currentHour < endHour || (currentHour === endHour && currentMin < endMin)) {
-                const timeStr = `${currentHour.toString().padStart(2, '0')}:${currentMin.toString().padStart(2, '0')}`;
-                slots.push(timeStr);
-
-                currentMin += 30;
-                if (currentMin >= 60) {
-                    currentMin = 0;
-                    currentHour += 1;
-                }
+    const handleJoinCall = (booking: Booking) => {
+        if (booking.meetingLink) {
+            if (booking.meetingLink.includes('/training1v1/call')) {
+                router.push(`${booking.meetingLink}&role=interviewee`);
+            } else {
+                window.open(booking.meetingLink, '_blank');
             }
         }
-
-        return slots;
     };
 
-    // Get available time slots for selected interviewer
-    const availableTimeSlots = selectedInterviewer
-        ? parseAvailableTime(selectedInterviewer.availableTime)
-        : [];
+    // ═══════════════════════════════════════════════════════════════
+    // REVIEW HANDLERS
+    // ═══════════════════════════════════════════════════════════════
+    const handleOpenReview = (booking: Booking) => {
+        setBookingToReview(booking);
+        setReviewRating(0);
+        setReviewComment('');
+        setShowReviewDialog(true);
+    };
 
+    const handleSubmitReview = async () => {
+        if (!bookingToReview || reviewRating === 0) return;
+
+        setReviewLoading(true);
+        try {
+            await api.post('/reviews', {
+                bookingId: bookingToReview.id,
+                targetUserId: bookingToReview.mentor.id,
+                rating: reviewRating,
+                comment: reviewComment || undefined,
+            });
+
+            setShowReviewDialog(false);
+            setBookingToReview(null);
+            await fetchBookings();
+        } catch (err) {
+            console.error('Error submitting review:', err);
+            alert('Không thể gửi đánh giá');
+        }
+        setReviewLoading(false);
+    };
+
+    // ═══════════════════════════════════════════════════════════════
+    // HELPERS
+    // ═══════════════════════════════════════════════════════════════
+    const formatDateTime = (dateStr: string) => {
+        const date = new Date(dateStr);
+        return {
+            date: date.toLocaleDateString('vi-VN', { weekday: 'short', day: 'numeric', month: 'numeric' }),
+            time: date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+        };
+    };
+
+    const canJoinCall = (booking: Booking) => {
+        if (booking.status !== 'CONFIRMED' || !booking.meetingLink) return false;
+        const now = new Date();
+        const start = new Date(booking.startTime);
+        const end = new Date(booking.endTime);
+        const joinStart = new Date(start.getTime() - 10 * 60 * 1000);
+        const joinEnd = new Date(end.getTime() + 30 * 60 * 1000);
+        return now >= joinStart && now <= joinEnd;
+    };
+
+    const getNext7Days = () => {
+        const days = [];
+        for (let i = 0; i < 7; i++) {
+            const date = new Date();
+            date.setDate(date.getDate() + i);
+            days.push({
+                value: date.toISOString().split('T')[0],
+                label: date.toLocaleDateString('vi-VN', { weekday: 'short', day: 'numeric', month: 'numeric' }),
+            });
+        }
+        return days;
+    };
+
+    // Filter bookings
+    const pendingBookings = bookings.filter(b => b.status === 'PENDING');
+    const confirmedBookings = bookings.filter(b => b.status === 'CONFIRMED');
+    const completedBookings = bookings.filter(b => b.status === 'COMPLETED');
+    const unreviewedBookings = completedBookings.filter(b => !b.review);
+
+    // ═══════════════════════════════════════════════════════════════
+    // RENDER
+    // ═══════════════════════════════════════════════════════════════
     return (
-        <div className="p-8 h-full">
-            {activeCall ? (
-                <VideoCallInterface
-                    roomId={activeCall.roomId}
-                    partnerId={activeCall.partnerId}
-                    onEndCall={handleEndCall}
-                />
-            ) : (
-                <div className="max-w-6xl mx-auto">
-                    <header className="mb-8">
-                        <div className="flex items-center justify-between mb-4">
-                            <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Luyện tập 1v1</h1>
-                        </div>
-                        <p className="text-slate-500 dark:text-slate-400 mt-2">
-                            Chọn một interviewer để bắt đầu buổi phỏng vấn thử hoặc xem các buổi đã đặt lịch.
-                        </p>
-                    </header>
+        <div className="p-6 lg:p-8 min-h-screen">
+            <div className="max-w-6xl mx-auto">
+                {/* Header */}
+                <header className="mb-8">
+                    <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Luyện tập 1v1</h1>
+                    <p className="text-slate-500 dark:text-slate-400 mt-2">
+                        Đặt lịch phỏng vấn thử với các interviewer chuyên nghiệp
+                    </p>
+                </header>
 
-                    {/* Tab Buttons */}
-                    <div className="flex gap-4 mb-8">
-                        <Button
-                            variant={activeTab === 'interviewers' ? 'default' : 'outline'}
-                            onClick={() => setActiveTab('interviewers')}
-                            className={`flex items-center gap-2 px-6 py-3 ${activeTab === 'interviewers'
-                                ? 'bg-cyan-500 hover:bg-cyan-600 text-white'
-                                : ''
-                                }`}
-                        >
-                            <Users className="w-5 h-5" />
-                            Danh sách Interviewer
-                        </Button>
-                        <Button
-                            variant={activeTab === 'scheduled' ? 'default' : 'outline'}
-                            onClick={() => setActiveTab('scheduled')}
-                            className={`flex items-center gap-2 px-6 py-3 ${activeTab === 'scheduled'
-                                ? 'bg-cyan-500 hover:bg-cyan-600 text-white'
-                                : ''
-                                }`}
-                        >
-                            <ListChecks className="w-5 h-5" />
-                            Lịch đã đặt
-                            {scheduledSessions.filter(s => s.status === 'upcoming').length > 0 && (
-                                <span className="ml-1 px-2 py-0.5 text-xs bg-white/20 rounded-full">
-                                    {scheduledSessions.filter(s => s.status === 'upcoming').length}
-                                </span>
-                            )}
-                        </Button>
-                        <Button
-                            variant={activeTab === 'reviews' ? 'default' : 'outline'}
-                            onClick={() => setActiveTab('reviews')}
-                            className={`flex items-center gap-2 px-6 py-3 ${activeTab === 'reviews'
-                                ? 'bg-yellow-500 hover:bg-yellow-600 text-white'
-                                : ''
-                                }`}
-                        >
-                            <Star className="w-5 h-5" />
-                            Đánh giá
-                            {getUnreviewedCompletedSessions().length > 0 && (
-                                <span className="ml-1 px-2 py-0.5 text-xs bg-red-500 text-white rounded-full">
-                                    {getUnreviewedCompletedSessions().length}
-                                </span>
-                            )}
-                        </Button>
-                    </div>
+                {/* Tab Buttons */}
+                <div className="flex flex-wrap gap-3 mb-8">
+                    <Button
+                        variant={activeTab === 'interviewers' ? 'default' : 'outline'}
+                        onClick={() => setActiveTab('interviewers')}
+                        className={activeTab === 'interviewers' ? 'bg-cyan-500 hover:bg-cyan-600' : ''}
+                    >
+                        <Users className="w-4 h-4 mr-2" />
+                        Interviewer
+                    </Button>
+                    <Button
+                        variant={activeTab === 'scheduled' ? 'default' : 'outline'}
+                        onClick={() => { setActiveTab('scheduled'); fetchBookings(); }}
+                        className={activeTab === 'scheduled' ? 'bg-cyan-500 hover:bg-cyan-600' : ''}
+                    >
+                        <ListChecks className="w-4 h-4 mr-2" />
+                        Lịch đã đặt
+                        {(pendingBookings.length + confirmedBookings.length) > 0 && (
+                            <span className="ml-2 px-2 py-0.5 text-xs bg-white/20 rounded-full">
+                                {pendingBookings.length + confirmedBookings.length}
+                            </span>
+                        )}
+                    </Button>
+                    <Button
+                        variant={activeTab === 'reviews' ? 'default' : 'outline'}
+                        onClick={() => setActiveTab('reviews')}
+                        className={activeTab === 'reviews' ? 'bg-yellow-500 hover:bg-yellow-600' : ''}
+                    >
+                        <Star className="w-4 h-4 mr-2" />
+                        Đánh giá
+                        {unreviewedBookings.length > 0 && (
+                            <span className="ml-2 px-2 py-0.5 text-xs bg-red-500 text-white rounded-full">
+                                {unreviewedBookings.length}
+                            </span>
+                        )}
+                    </Button>
+                </div>
 
-                    {/* Tab Content */}
-                    {activeTab === 'interviewers' ? (
-                        /* Interviewer List */
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {INTERVIEWERS.map((interviewer) => (
-                                <Card
-                                    key={interviewer.id}
-                                    className="p-5 hover:shadow-lg transition-all duration-200 hover:border-cyan-300 dark:hover:border-cyan-600"
-                                >
-                                    {/* Header */}
-                                    <div className="flex items-start gap-4 mb-4">
-                                        <Avatar className="w-14 h-14 border-2 border-cyan-100 dark:border-cyan-800">
-                                            {interviewer.avatar && <AvatarImage src={interviewer.avatar} />}
-                                            <AvatarFallback className="bg-cyan-100 dark:bg-cyan-900 text-cyan-600 dark:text-cyan-300 font-bold text-lg">
-                                                {interviewer.name.split(' ').pop()?.[0]}
-                                            </AvatarFallback>
-                                        </Avatar>
-                                        <div className="flex-1 min-w-0">
-                                            <h3 className="font-semibold text-slate-900 dark:text-white truncate">
-                                                {interviewer.name}
-                                            </h3>
-                                            <p className="text-sm text-slate-500 dark:text-slate-400 truncate">
-                                                {interviewer.role}
-                                            </p>
-                                            <p className="text-sm text-cyan-600 dark:text-cyan-400 font-medium">
-                                                {interviewer.company}
-                                            </p>
+                {/* Error State */}
+                {error && (
+                    <Card className="p-8 text-center mb-6">
+                        <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
+                        <p className="text-red-500 mb-4">{error}</p>
+                        <Button variant="outline" onClick={fetchInterviewers}>
+                            <RefreshCw className="w-4 h-4 mr-2" />
+                            Thử lại
+                        </Button>
+                    </Card>
+                )}
+
+                {/* ═══════════════════════════════════════════════════════════════ */}
+                {/* TAB: INTERVIEWERS */}
+                {/* ═══════════════════════════════════════════════════════════════ */}
+                {activeTab === 'interviewers' && !error && (
+                    <>
+                        {loadingInterviewers ? (
+                            <div className="flex items-center justify-center py-20">
+                                <Loader2 className="w-8 h-8 animate-spin text-cyan-500" />
+                            </div>
+                        ) : interviewers.length === 0 ? (
+                            <Card className="p-8 text-center">
+                                <Users className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                                <p className="text-slate-500">Chưa có interviewer nào</p>
+                            </Card>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {interviewers.map((interviewer) => (
+                                    <Card key={interviewer.id} className="p-5 hover:shadow-lg transition-shadow">
+                                        {/* Header with UserProfilePopup */}
+                                        <div className="flex items-start gap-4 mb-4">
+                                            <UserProfilePopup
+                                                userId={interviewer.id}
+                                                userName={interviewer.name}
+                                                userAvatar={interviewer.avatar}
+                                                userTitle={interviewer.interviewerProfile?.title || undefined}
+                                            />
                                         </div>
-                                    </div>
 
-                                    {/* Rating */}
-                                    <div className="flex items-center gap-2 mb-3">
-                                        <StarRating rating={interviewer.rating} />
-                                        <span className="text-sm font-medium text-slate-900 dark:text-white">
-                                            {interviewer.rating}
-                                        </span>
-                                        <span className="text-sm text-slate-500 dark:text-slate-400">
-                                            ({interviewer.totalReviews} đánh giá)
-                                        </span>
-                                    </div>
+                                        {/* Rating */}
+                                        {interviewer.interviewerProfile && (
+                                            <div className="flex items-center gap-2 mb-3">
+                                                <StarRating rating={interviewer.interviewerProfile.rating || 0} />
+                                                <span className="text-sm font-medium">
+                                                    {(interviewer.interviewerProfile.rating || 0).toFixed(1)}
+                                                </span>
+                                                <span className="text-sm text-slate-500">
+                                                    ({interviewer.interviewerProfile.totalReviews || 0} đánh giá)
+                                                </span>
+                                            </div>
+                                        )}
 
-                                    {/* Experience */}
-                                    <p className="text-sm text-slate-600 dark:text-slate-300 mb-3">
-                                        {interviewer.experience}
-                                    </p>
+                                        {/* Experience */}
+                                        {interviewer.interviewerProfile?.experience && (
+                                            <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">
+                                                {interviewer.interviewerProfile.experience} năm kinh nghiệm
+                                            </p>
+                                        )}
 
-                                    {/* Specialties */}
-                                    <div className="flex flex-wrap gap-1.5 mb-4">
-                                        {interviewer.specialties.map((specialty) => (
-                                            <span
-                                                key={specialty}
-                                                className="px-2 py-0.5 text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-full"
-                                            >
-                                                {specialty}
-                                            </span>
-                                        ))}
-                                    </div>
+                                        {/* Skills */}
+                                        {interviewer.interviewerProfile?.skills && interviewer.interviewerProfile.skills.length > 0 && (
+                                            <div className="flex flex-wrap gap-1 mb-4">
+                                                {interviewer.interviewerProfile.skills.slice(0, 4).map((skill, idx) => (
+                                                    <span
+                                                        key={idx}
+                                                        className="px-2 py-0.5 text-xs bg-slate-100 dark:bg-slate-700 rounded-full"
+                                                    >
+                                                        {skill}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        )}
 
-                                    {/* Available Time */}
-                                    <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 mb-4 pb-4 border-b border-slate-100 dark:border-slate-700">
-                                        <Clock className="w-4 h-4 text-green-500" />
-                                        <span>Thời gian nhận phỏng vấn:</span>
-                                    </div>
-                                    <div className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 mb-4">
-                                        <Calendar className="w-4 h-4 text-cyan-500 dark:text-cyan-400" />
-                                        <span>{interviewer.availableTime}</span>
-                                    </div>
+                                        {/* Hourly Rate */}
+                                        {interviewer.interviewerProfile?.hourlyRate && (
+                                            <p className="text-sm text-cyan-600 dark:text-cyan-400 font-medium mb-4">
+                                                {interviewer.interviewerProfile.hourlyRate.toLocaleString('vi-VN')}đ / giờ
+                                            </p>
+                                        )}
 
-                                    {/* Action Buttons */}
-                                    <div className="flex gap-2">
+                                        {/* Action Button */}
                                         <Button
-                                            className="flex-1 bg-green-500 hover:bg-green-600 text-white"
-                                            onClick={() => {
-                                                // Create room with interviewer ID for 2-person call
-                                                const roomId = `room-${interviewer.id}`;
-                                                router.push(`/training1v1/call?room=${roomId}&role=interviewee`);
-                                            }}
-                                        >
-                                            <Video className="w-4 h-4 mr-2 text-white" />
-                                            Gọi ngay
-                                        </Button>
-                                        <Button
-                                            variant="outline"
-                                            className="flex-1 border-cyan-300 text-cyan-600 hover:bg-cyan-50 dark:border-cyan-700 dark:text-cyan-400 dark:hover:bg-cyan-900/20"
-                                            onClick={() => handleOpenSchedule(interviewer)}
+                                            className="w-full bg-cyan-500 hover:bg-cyan-600"
+                                            onClick={() => handleOpenBooking(interviewer)}
                                         >
                                             <Calendar className="w-4 h-4 mr-2" />
                                             Đặt lịch
                                         </Button>
-                                    </div>
-                                </Card>
-                            ))}
-                        </div>
-                    ) : activeTab === 'scheduled' ? (
-                        /* Scheduled Sessions List */
-                        <div className="space-y-6">
-                            {/* Upcoming Sessions */}
-                            <div>
-                                <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-                                    <Calendar className="w-5 h-5 text-cyan-500" />
-                                    Buổi phỏng vấn sắp tới
-                                </h2>
-                                {scheduledSessions.filter(s => s.status === 'upcoming').length > 0 ? (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {scheduledSessions
-                                            .filter(s => s.status === 'upcoming')
-                                            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-                                            .map((session) => (
-                                                <Card key={session.id} className="p-5 border-l-4 border-l-cyan-500">
-                                                    <div className="flex items-start gap-4">
-                                                        <Avatar className="w-12 h-12">
-                                                            <AvatarFallback className="bg-cyan-100 dark:bg-cyan-900 text-cyan-600 dark:text-cyan-300 font-bold">
-                                                                {session.interviewerName.split(' ').pop()?.[0]}
-                                                            </AvatarFallback>
-                                                        </Avatar>
-                                                        <div className="flex-1">
-                                                            <h3 className="font-semibold text-slate-900 dark:text-white">
-                                                                {session.interviewerName}
-                                                            </h3>
-                                                            <p className="text-sm text-slate-500 dark:text-slate-400">
-                                                                {session.interviewerRole} - {session.interviewerCompany}
-                                                            </p>
-                                                            <div className="flex items-center gap-4 mt-2 text-sm">
-                                                                <span className="flex items-center gap-1 text-cyan-600 dark:text-cyan-400">
+                                    </Card>
+                                ))}
+                            </div>
+                        )}
+                    </>
+                )}
+
+                {/* ═══════════════════════════════════════════════════════════════ */}
+                {/* TAB: SCHEDULED */}
+                {/* ═══════════════════════════════════════════════════════════════ */}
+                {activeTab === 'scheduled' && (
+                    <div className="space-y-8">
+                        {loadingBookings ? (
+                            <div className="flex items-center justify-center py-20">
+                                <Loader2 className="w-8 h-8 animate-spin text-cyan-500" />
+                            </div>
+                        ) : (
+                            <>
+                                {/* Pending Bookings */}
+                                {pendingBookings.length > 0 && (
+                                    <div>
+                                        <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                                            <Clock className="w-5 h-5 text-yellow-500" />
+                                            Chờ xác nhận ({pendingBookings.length})
+                                        </h2>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            {pendingBookings.map((booking) => {
+                                                const { date, time } = formatDateTime(booking.startTime);
+                                                return (
+                                                    <Card key={booking.id} className="p-5 border-l-4 border-l-yellow-500">
+                                                        <div className="flex items-start gap-4">
+                                                            <UserProfilePopup
+                                                                userId={booking.mentor.id}
+                                                                userName={booking.mentor.name}
+                                                                userAvatar={booking.mentor.avatar}
+                                                                userTitle={booking.mentor.interviewerProfile?.title || undefined}
+                                                            />
+                                                            <div className="flex-1">
+                                                                <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 mb-2">
                                                                     <Calendar className="w-4 h-4" />
-                                                                    {formatDate(session.date)}
+                                                                    {date}
+                                                                    <Clock className="w-4 h-4 ml-2" />
+                                                                    {time}
+                                                                </div>
+                                                                <span className="inline-block px-2 py-0.5 text-xs bg-yellow-100 text-yellow-700 rounded-full">
+                                                                    Chờ interviewer xác nhận
                                                                 </span>
-                                                                <span className="flex items-center gap-1 text-slate-600 dark:text-slate-300">
-                                                                    <Clock className="w-4 h-4" />
-                                                                    {session.time}
-                                                                </span>
-                                                            </div>
-                                                            {session.note && (
-                                                                <p className="mt-2 text-sm text-slate-500 dark:text-slate-400 italic">
-                                                                    "{session.note}"
-                                                                </p>
-                                                            )}
-                                                            <div className="flex gap-2 mt-4">
-                                                                <Button
-                                                                    className="flex-1 bg-cyan-500 hover:bg-cyan-600 text-white"
-                                                                    onClick={() => handleJoinCall(session)}
-                                                                >
-                                                                    <Video className="w-4 h-4 mr-2" />
-                                                                    Vào phỏng vấn
-                                                                </Button>
                                                                 <Button
                                                                     variant="outline"
-                                                                    className="text-red-500 border-red-200 hover:bg-red-50 dark:border-red-800 dark:hover:bg-red-900/20"
-                                                                    onClick={() => handleCancelSession(session.id)}
+                                                                    size="sm"
+                                                                    className="mt-3 text-red-500 border-red-200"
+                                                                    onClick={() => handleCancelBooking(booking.id)}
+                                                                    disabled={actionLoading === booking.id}
                                                                 >
-                                                                    <X className="w-4 h-4" />
+                                                                    {actionLoading === booking.id ? (
+                                                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                                                    ) : (
+                                                                        <>
+                                                                            <X className="w-4 h-4 mr-1" /> Hủy
+                                                                        </>
+                                                                    )}
                                                                 </Button>
                                                             </div>
                                                         </div>
-                                                    </div>
-                                                </Card>
-                                            ))}
+                                                    </Card>
+                                                );
+                                            })}
+                                        </div>
                                     </div>
-                                ) : (
+                                )}
+
+                                {/* Confirmed Bookings */}
+                                {confirmedBookings.length > 0 && (
+                                    <div>
+                                        <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                                            <CheckCircle className="w-5 h-5 text-green-500" />
+                                            Sắp tới ({confirmedBookings.length})
+                                        </h2>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            {confirmedBookings.map((booking) => {
+                                                const { date, time } = formatDateTime(booking.startTime);
+                                                const canJoin = canJoinCall(booking);
+                                                return (
+                                                    <Card key={booking.id} className="p-5 border-l-4 border-l-green-500">
+                                                        <div className="flex items-start gap-4">
+                                                            <UserProfilePopup
+                                                                userId={booking.mentor.id}
+                                                                userName={booking.mentor.name}
+                                                                userAvatar={booking.mentor.avatar}
+                                                                userTitle={booking.mentor.interviewerProfile?.title || undefined}
+                                                            />
+                                                            <div className="flex-1">
+                                                                <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 mb-2">
+                                                                    <Calendar className="w-4 h-4" />
+                                                                    {date}
+                                                                    <Clock className="w-4 h-4 ml-2" />
+                                                                    {time}
+                                                                </div>
+                                                                {booking.note && (
+                                                                    <p className="text-sm text-slate-500 italic mb-2">"{booking.note}"</p>
+                                                                )}
+                                                                <div className="flex gap-2 mt-3">
+                                                                    {canJoin && (
+                                                                        <Button
+                                                                            size="sm"
+                                                                            className="bg-green-500 hover:bg-green-600"
+                                                                            onClick={() => handleJoinCall(booking)}
+                                                                        >
+                                                                            <Video className="w-4 h-4 mr-1" />
+                                                                            Vào phỏng vấn
+                                                                        </Button>
+                                                                    )}
+                                                                    <Button
+                                                                        variant="outline"
+                                                                        size="sm"
+                                                                        className="text-red-500 border-red-200"
+                                                                        onClick={() => handleCancelBooking(booking.id)}
+                                                                        disabled={actionLoading === booking.id}
+                                                                    >
+                                                                        <X className="w-4 h-4" />
+                                                                    </Button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </Card>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Empty State */}
+                                {pendingBookings.length === 0 && confirmedBookings.length === 0 && (
                                     <Card className="p-8 text-center">
-                                        <Calendar className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
-                                        <p className="text-slate-500 dark:text-slate-400 mb-4">
-                                            Bạn chưa có buổi phỏng vấn nào sắp tới
-                                        </p>
-                                        <Button
-                                            variant="outline"
-                                            onClick={() => setActiveTab('interviewers')}
-                                        >
+                                        <Calendar className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                                        <p className="text-slate-500 mb-4">Bạn chưa có lịch hẹn nào</p>
+                                        <Button variant="outline" onClick={() => setActiveTab('interviewers')}>
                                             Đặt lịch ngay
                                         </Button>
                                     </Card>
                                 )}
-                            </div>
+                            </>
+                        )}
+                    </div>
+                )}
 
-                            {/* Completed Sessions */}
-                            {scheduledSessions.filter(s => s.status === 'completed').length > 0 && (
-                                <div>
-                                    <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-                                        <CheckCircle className="w-5 h-5 text-green-500" />
-                                        Đã hoàn thành
-                                    </h2>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {scheduledSessions
-                                            .filter(s => s.status === 'completed')
-                                            .map((session) => (
-                                                <Card key={session.id} className="p-5 border-l-4 border-l-green-500">
-                                                    <div className="flex items-start gap-4">
-                                                        <Avatar className="w-12 h-12">
-                                                            <AvatarFallback className="bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-300 font-bold">
-                                                                {session.interviewerName.split(' ').pop()?.[0]}
-                                                            </AvatarFallback>
-                                                        </Avatar>
-                                                        <div className="flex-1">
-                                                            <h3 className="font-semibold text-slate-900 dark:text-white">
-                                                                {session.interviewerName}
-                                                            </h3>
-                                                            <p className="text-sm text-slate-500 dark:text-slate-400">
-                                                                {session.interviewerRole} - {session.interviewerCompany}
-                                                            </p>
-                                                            <div className="flex items-center gap-4 mt-2 text-sm">
-                                                                <span className="flex items-center gap-1 text-slate-600 dark:text-slate-400">
-                                                                    <Calendar className="w-4 h-4" />
-                                                                    {formatDate(session.date)}
-                                                                </span>
-                                                                <span className="flex items-center gap-1 text-slate-600 dark:text-slate-400">
-                                                                    <Clock className="w-4 h-4" />
-                                                                    {session.time}
-                                                                </span>
-                                                            </div>
-
-                                                            {/* Review Section */}
-                                                            {session.review ? (
-                                                                <div className="mt-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
-                                                                    <div className="flex items-center gap-2 mb-1">
-                                                                        <StarRating rating={session.review.rating} />
-                                                                        <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                                                                            {session.review.rating}/5
-                                                                        </span>
-                                                                    </div>
-                                                                    {session.review.comment && (
-                                                                        <p className="text-sm text-slate-600 dark:text-slate-400 italic">
-                                                                            &ldquo;{session.review.comment}&rdquo;
-                                                                        </p>
-                                                                    )}
-                                                                </div>
-                                                            ) : (
-                                                                <Button
-                                                                    variant="outline"
-                                                                    size="sm"
-                                                                    className="mt-3 text-yellow-600 border-yellow-300 hover:bg-yellow-50 dark:text-yellow-400 dark:border-yellow-700 dark:hover:bg-yellow-900/20"
-                                                                    onClick={() => handleOpenReview(session)}
-                                                                >
-                                                                    <Star className="w-4 h-4 mr-2" />
-                                                                    Đánh giá buổi phỏng vấn
-                                                                </Button>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                </Card>
-                                            ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Cancelled Sessions */}
-                            {scheduledSessions.filter(s => s.status === 'cancelled').length > 0 && (
-                                <div>
-                                    <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-                                        <X className="w-5 h-5 text-red-500" />
-                                        Đã hủy
-                                    </h2>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {scheduledSessions
-                                            .filter(s => s.status === 'cancelled')
-                                            .map((session) => (
-                                                <Card key={session.id} className="p-5 border-l-4 border-l-red-400 opacity-60">
-                                                    <div className="flex items-start gap-4">
-                                                        <Avatar className="w-12 h-12">
-                                                            <AvatarFallback className="bg-slate-100 dark:bg-slate-700 text-slate-400 font-bold">
-                                                                {session.interviewerName.split(' ').pop()?.[0]}
-                                                            </AvatarFallback>
-                                                        </Avatar>
-                                                        <div className="flex-1">
-                                                            <h3 className="font-semibold text-slate-500 dark:text-slate-400 line-through">
-                                                                {session.interviewerName}
-                                                            </h3>
-                                                            <p className="text-sm text-slate-400 dark:text-slate-500">
-                                                                {session.interviewerRole} - {session.interviewerCompany}
-                                                            </p>
-                                                            <div className="flex items-center gap-4 mt-2 text-sm text-slate-400">
-                                                                <span className="flex items-center gap-1">
-                                                                    <Calendar className="w-4 h-4" />
-                                                                    {formatDate(session.date)}
-                                                                </span>
-                                                                <span className="flex items-center gap-1">
-                                                                    <Clock className="w-4 h-4" />
-                                                                    {session.time}
-                                                                </span>
-                                                            </div>
-                                                            <span className="inline-block mt-2 px-2 py-1 text-xs bg-red-100 dark:bg-red-900/30 text-red-500 dark:text-red-400 rounded-full">
-                                                                Đã hủy
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                </Card>
-                                            ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Expired Sessions */}
-                            {scheduledSessions.filter(s => s.status === 'expired').length > 0 && (
-                                <div>
-                                    <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-                                        <Clock className="w-5 h-5 text-orange-500" />
-                                        Đã hết hạn
-                                        <span className="px-2 py-0.5 text-sm bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded-full">
-                                            {scheduledSessions.filter(s => s.status === 'expired').length}
-                                        </span>
-                                    </h2>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {scheduledSessions
-                                            .filter(s => s.status === 'expired')
-                                            .map((session) => (
-                                                <Card key={session.id} className="p-5 border-l-4 border-l-orange-400 opacity-70">
-                                                    <div className="flex items-start gap-4">
-                                                        <Avatar className="w-12 h-12">
-                                                            <AvatarFallback className="bg-orange-100 dark:bg-orange-900/30 text-orange-500 dark:text-orange-400 font-bold">
-                                                                {session.interviewerName.split(' ').pop()?.[0]}
-                                                            </AvatarFallback>
-                                                        </Avatar>
-                                                        <div className="flex-1">
-                                                            <h3 className="font-semibold text-slate-700 dark:text-slate-300">
-                                                                {session.interviewerName}
-                                                            </h3>
-                                                            <p className="text-sm text-slate-500 dark:text-slate-400">
-                                                                {session.interviewerRole} - {session.interviewerCompany}
-                                                            </p>
-                                                            <div className="flex items-center gap-4 mt-2 text-sm text-slate-400">
-                                                                <span className="flex items-center gap-1">
-                                                                    <Calendar className="w-4 h-4" />
-                                                                    {formatDate(session.date)}
-                                                                </span>
-                                                                <span className="flex items-center gap-1">
-                                                                    <Clock className="w-4 h-4" />
-                                                                    {session.time}
-                                                                </span>
-                                                            </div>
-                                                            <span className="inline-block mt-2 px-2 py-1 text-xs bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded-full">
-                                                                Đã hết hạn - Không tham gia
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                </Card>
-                                            ))}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    ) : activeTab === 'reviews' ? (
-                        /* Reviews Tab */
-                        <div className="space-y-8">
-                            {/* Pending Reviews */}
+                {/* ═══════════════════════════════════════════════════════════════ */}
+                {/* TAB: REVIEWS */}
+                {/* ═══════════════════════════════════════════════════════════════ */}
+                {activeTab === 'reviews' && (
+                    <div className="space-y-8">
+                        {/* Pending Reviews */}
+                        {unreviewedBookings.length > 0 && (
                             <div>
-                                <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                                <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
                                     <Clock className="w-5 h-5 text-yellow-500" />
-                                    Chờ đánh giá
-                                    {getUnreviewedCompletedSessions().length > 0 && (
-                                        <span className="px-2 py-0.5 text-sm bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 rounded-full">
-                                            {getUnreviewedCompletedSessions().length}
-                                        </span>
-                                    )}
+                                    Chờ đánh giá ({unreviewedBookings.length})
                                 </h2>
-                                {getUnreviewedCompletedSessions().length > 0 ? (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {getUnreviewedCompletedSessions().map((session) => (
-                                            <Card key={session.id} className="p-5 border-l-4 border-l-yellow-500 hover:shadow-lg transition-shadow">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {unreviewedBookings.map((booking) => {
+                                        const { date, time } = formatDateTime(booking.startTime);
+                                        return (
+                                            <Card key={booking.id} className="p-5 border-l-4 border-l-yellow-500">
                                                 <div className="flex items-start gap-4">
-                                                    <Avatar className="w-12 h-12">
-                                                        <AvatarFallback className="bg-yellow-100 dark:bg-yellow-900 text-yellow-600 dark:text-yellow-300 font-bold">
-                                                            {session.interviewerName.split(' ').pop()?.[0]}
-                                                        </AvatarFallback>
-                                                    </Avatar>
+                                                    <UserProfilePopup
+                                                        userId={booking.mentor.id}
+                                                        userName={booking.mentor.name}
+                                                        userAvatar={booking.mentor.avatar}
+                                                        userTitle={booking.mentor.interviewerProfile?.title || undefined}
+                                                    />
                                                     <div className="flex-1">
-                                                        <h3 className="font-semibold text-slate-900 dark:text-white">
-                                                            {session.interviewerName}
-                                                        </h3>
-                                                        <p className="text-sm text-slate-500 dark:text-slate-400">
-                                                            {session.interviewerRole} - {session.interviewerCompany}
-                                                        </p>
-                                                        <div className="flex items-center gap-4 mt-2 text-sm">
-                                                            <span className="flex items-center gap-1 text-slate-600 dark:text-slate-400">
-                                                                <Calendar className="w-4 h-4" />
-                                                                {formatDate(session.date)}
-                                                            </span>
-                                                            <span className="flex items-center gap-1 text-slate-600 dark:text-slate-400">
-                                                                <Clock className="w-4 h-4" />
-                                                                {session.time}
-                                                            </span>
+                                                        <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 mb-3">
+                                                            <Calendar className="w-4 h-4" />
+                                                            {date}
+                                                            <Clock className="w-4 h-4 ml-2" />
+                                                            {time}
                                                         </div>
                                                         <Button
-                                                            className="mt-4 bg-yellow-500 hover:bg-yellow-600 text-white"
-                                                            onClick={() => handleOpenReview(session)}
+                                                            className="bg-yellow-500 hover:bg-yellow-600"
+                                                            onClick={() => handleOpenReview(booking)}
                                                         >
                                                             <Star className="w-4 h-4 mr-2" />
                                                             Đánh giá ngay
@@ -753,421 +653,238 @@ export const Training1v1: React.FC = () => {
                                                     </div>
                                                 </div>
                                             </Card>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <Card className="p-8 text-center bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
-                                        <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-3" />
-                                        <p className="text-green-700 dark:text-green-400 font-medium">
-                                            Bạn đã đánh giá tất cả các buổi phỏng vấn!
-                                        </p>
-                                    </Card>
-                                )}
+                                        );
+                                    })}
+                                </div>
                             </div>
+                        )}
 
-                            {/* Reviewed Sessions */}
+                        {/* Reviewed */}
+                        {completedBookings.filter(b => b.review).length > 0 && (
                             <div>
-                                <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                                <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
                                     <Star className="w-5 h-5 text-yellow-400 fill-yellow-400" />
                                     Đã đánh giá
                                 </h2>
-                                {scheduledSessions.filter(s => s.status === 'completed' && s.review).length > 0 ? (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {scheduledSessions
-                                            .filter(s => s.status === 'completed' && s.review)
-                                            .sort((a, b) => {
-                                                const dateA = new Date(a.review?.createdAt || 0);
-                                                const dateB = new Date(b.review?.createdAt || 0);
-                                                return dateB.getTime() - dateA.getTime();
-                                            })
-                                            .map((session) => (
-                                                <Card key={session.id} className="p-5 border-l-4 border-l-green-500">
-                                                    <div className="flex items-start gap-4">
-                                                        <Avatar className="w-12 h-12">
-                                                            <AvatarFallback className="bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-300 font-bold">
-                                                                {session.interviewerName.split(' ').pop()?.[0]}
-                                                            </AvatarFallback>
-                                                        </Avatar>
-                                                        <div className="flex-1">
-                                                            <h3 className="font-semibold text-slate-900 dark:text-white">
-                                                                {session.interviewerName}
-                                                            </h3>
-                                                            <p className="text-sm text-slate-500 dark:text-slate-400">
-                                                                {session.interviewerRole} - {session.interviewerCompany}
-                                                            </p>
-                                                            <div className="flex items-center gap-4 mt-2 text-sm">
-                                                                <span className="flex items-center gap-1 text-slate-600 dark:text-slate-400">
-                                                                    <Calendar className="w-4 h-4" />
-                                                                    {formatDate(session.date)}
-                                                                </span>
-                                                            </div>
-
-                                                            {/* Review Display */}
-                                                            {session.review && (
-                                                                <div className="mt-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
-                                                                    <div className="flex items-center gap-2 mb-2">
-                                                                        <StarRating rating={session.review.rating} />
-                                                                        <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                                                                            {session.review.rating}/5
-                                                                        </span>
-                                                                    </div>
-                                                                    {session.review.comment && (
-                                                                        <p className="text-sm text-slate-600 dark:text-slate-400">
-                                                                            &ldquo;{session.review.comment}&rdquo;
-                                                                        </p>
-                                                                    )}
-                                                                    <p className="text-xs text-slate-400 dark:text-slate-500 mt-2">
-                                                                        Đánh giá lúc: {new Date(session.review.createdAt).toLocaleDateString('vi-VN', {
-                                                                            year: 'numeric',
-                                                                            month: 'long',
-                                                                            day: 'numeric',
-                                                                            hour: '2-digit',
-                                                                            minute: '2-digit'
-                                                                        })}
-                                                                    </p>
-                                                                </div>
-                                                            )}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {completedBookings.filter(b => b.review).map((booking) => {
+                                        const { date } = formatDateTime(booking.startTime);
+                                        return (
+                                            <Card key={booking.id} className="p-5 border-l-4 border-l-green-500">
+                                                <div className="flex items-start gap-4">
+                                                    <Avatar className="w-10 h-10">
+                                                        {booking.mentor.avatar && <AvatarImage src={booking.mentor.avatar} />}
+                                                        <AvatarFallback className="bg-green-100 text-green-600">
+                                                            {booking.mentor.name?.charAt(0)}
+                                                        </AvatarFallback>
+                                                    </Avatar>
+                                                    <div className="flex-1">
+                                                        <p className="font-medium">{booking.mentor.name}</p>
+                                                        <p className="text-sm text-slate-500 mb-2">{date}</p>
+                                                        <div className="flex items-center gap-2">
+                                                            <StarRating rating={booking.review?.rating || 0} />
+                                                            <span className="text-sm font-medium">{booking.review?.rating}/5</span>
                                                         </div>
+                                                        {booking.review?.comment && (
+                                                            <p className="text-sm text-slate-600 mt-2 italic">"{booking.review.comment}"</p>
+                                                        )}
                                                     </div>
-                                                </Card>
-                                            ))}
-                                    </div>
-                                ) : (
-                                    <Card className="p-8 text-center">
-                                        <Star className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
-                                        <p className="text-slate-500 dark:text-slate-400">
-                                            Chưa có đánh giá nào
-                                        </p>
-                                    </Card>
-                                )}
+                                                </div>
+                                            </Card>
+                                        );
+                                    })}
+                                </div>
                             </div>
+                        )}
 
-                            {/* Review Stats */}
-                            {scheduledSessions.filter(s => s.review).length > 0 && (
-                                <Card className="p-6 bg-gradient-to-r from-cyan-50 to-blue-50 dark:from-cyan-900/20 dark:to-blue-900/20 border-cyan-200 dark:border-cyan-800">
-                                    <h3 className="font-semibold text-slate-900 dark:text-white mb-4">Thống kê đánh giá</h3>
-                                    <div className="grid grid-cols-3 gap-4 text-center">
-                                        <div>
-                                            <p className="text-3xl font-bold text-cyan-600 dark:text-cyan-400">
-                                                {scheduledSessions.filter(s => s.review).length}
-                                            </p>
-                                            <p className="text-sm text-slate-500 dark:text-slate-400">Tổng đánh giá</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-3xl font-bold text-yellow-600 dark:text-yellow-400">
-                                                {(scheduledSessions
-                                                    .filter(s => s.review)
-                                                    .reduce((acc, s) => acc + (s.review?.rating || 0), 0) /
-                                                    scheduledSessions.filter(s => s.review).length
-                                                ).toFixed(1)}
-                                            </p>
-                                            <p className="text-sm text-slate-500 dark:text-slate-400">Điểm trung bình</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-3xl font-bold text-green-600 dark:text-green-400">
-                                                {scheduledSessions.filter(s => s.review && s.review.rating >= 4).length}
-                                            </p>
-                                            <p className="text-sm text-slate-500 dark:text-slate-400">Đánh giá tốt (4-5⭐)</p>
-                                        </div>
-                                    </div>
-                                </Card>
-                            )}
-                        </div>
-                    ) : null}
-                </div>
-            )}
+                        {/* Empty */}
+                        {completedBookings.length === 0 && (
+                            <Card className="p-8 text-center">
+                                <Star className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                                <p className="text-slate-500">Chưa có buổi phỏng vấn nào được hoàn thành</p>
+                            </Card>
+                        )}
+                    </div>
+                )}
 
-            {/* Schedule Dialog */}
-            <AlertDialog open={showScheduleDialog} onOpenChange={setShowScheduleDialog}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle className="flex items-center gap-3">
-                            <Avatar className="w-10 h-10">
-                                <AvatarFallback className="bg-cyan-100 dark:bg-cyan-900 text-cyan-600 dark:text-cyan-300 font-bold">
-                                    {selectedInterviewer?.name.split(' ').pop()?.[0]}
-                                </AvatarFallback>
-                            </Avatar>
-                            <div>
-                                <p className="text-lg font-semibold">Đặt lịch với {selectedInterviewer?.name}</p>
-                                <p className="text-sm font-normal text-slate-500 dark:text-slate-400">
-                                    {selectedInterviewer?.role} tại {selectedInterviewer?.company}
-                                </p>
-                            </div>
-                        </AlertDialogTitle>
-                        <div className="space-y-4 pt-4">
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                    Chọn ngày
-                                </label>
-                                <DateInput
-                                    value={selectedDate}
-                                    onChange={(e) => setSelectedDate(e.target.value)}
-                                    min={new Date().toISOString().split('T')[0]}
-                                    className="w-full"
-                                />
-                            </div>
+                {/* ═══════════════════════════════════════════════════════════════ */}
+                {/* BOOKING DIALOG */}
+                {/* ═══════════════════════════════════════════════════════════════ */}
+                <Dialog open={showBookingDialog} onOpenChange={setShowBookingDialog}>
+                    <DialogContent className="max-w-md">
+                        <DialogHeader>
+                            <DialogTitle>Đặt lịch phỏng vấn</DialogTitle>
+                        </DialogHeader>
 
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                    Chọn giờ
-                                </label>
-                                {availableTimeSlots.length > 0 ? (
-                                    <div className="grid grid-cols-4 gap-2 max-h-48 overflow-y-auto pr-2 scrollbar-thin">
-                                        {availableTimeSlots.map((time) => (
-                                            <button
-                                                key={time}
-                                                type="button"
-                                                onClick={() => setSelectedTime(time)}
-                                                className={`px-3 py-2.5 text-sm font-medium rounded-xl border-2 transition-all duration-200 ${selectedTime === time
-                                                    ? 'bg-gradient-to-r from-cyan-500 to-cyan-600 text-white border-cyan-500 shadow-lg shadow-cyan-500/25 scale-[1.02]'
-                                                    : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-600 hover:border-cyan-400 dark:hover:border-cyan-500 hover:bg-cyan-50 dark:hover:bg-cyan-900/20'
-                                                    }`}
-                                            >
-                                                {time}
-                                            </button>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <p className="text-sm text-slate-500 dark:text-slate-400">
-                                        Không có khung giờ khả dụng
-                                    </p>
-                                )}
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                    Ghi chú (không bắt buộc)
-                                </label>
-                                <Input
-                                    type="text"
-                                    value={note}
-                                    onChange={(e) => setNote(e.target.value)}
-                                    placeholder="VD: Muốn tập trung vào System Design..."
-                                    className="w-full"
-                                />
-                            </div>
-
-                            <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-3 text-sm">
-                                <p className="text-slate-600 dark:text-slate-300">
-                                    <span className="font-medium">Thời gian nhận phỏng vấn:</span> {selectedInterviewer?.availableTime}
-                                </p>
-                            </div>
-                        </div>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel onClick={() => setShowScheduleDialog(false)}>
-                            Hủy
-                        </AlertDialogCancel>
-                        <AlertDialogAction
-                            onClick={handleConfirmSchedule}
-                            disabled={!selectedDate || !selectedTime}
-                            className="bg-cyan-500 hover:bg-cyan-600 text-white disabled:opacity-50"
-                        >
-                            Tiếp tục
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
-
-            {/* Confirm Dialog */}
-            <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle className="flex items-center gap-2 text-green-600">
-                            <CheckCircle className="w-6 h-6" />
-                            Xác nhận đặt lịch
-                        </AlertDialogTitle>
-                        <div className="space-y-4 pt-4">
-                            <div className="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4 space-y-3">
-                                <div className="flex items-center gap-3">
+                        {selectedInterviewer && (
+                            <div className="space-y-4">
+                                {/* Interviewer Info */}
+                                <div className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
                                     <Avatar className="w-12 h-12">
-                                        <AvatarFallback className="bg-cyan-100 dark:bg-cyan-900 text-cyan-600 dark:text-cyan-300 font-bold">
-                                            {selectedInterviewer?.name.split(' ').pop()?.[0]}
+                                        {selectedInterviewer.avatar && <AvatarImage src={selectedInterviewer.avatar} />}
+                                        <AvatarFallback className="bg-cyan-100 text-cyan-600">
+                                            {selectedInterviewer.name?.charAt(0)}
                                         </AvatarFallback>
                                     </Avatar>
                                     <div>
-                                        <p className="font-semibold text-slate-900 dark:text-white">{selectedInterviewer?.name}</p>
-                                        <p className="text-sm text-slate-500 dark:text-slate-400">{selectedInterviewer?.role}</p>
+                                        <p className="font-semibold">{selectedInterviewer.name}</p>
+                                        <p className="text-sm text-slate-500">
+                                            {selectedInterviewer.interviewerProfile?.title}
+                                        </p>
                                     </div>
                                 </div>
 
-                                <div className="border-t border-slate-200 dark:border-slate-600 pt-3 space-y-2">
-                                    <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-                                        <Calendar className="w-4 h-4 text-cyan-500 dark:text-cyan-400" />
-                                        <span className="font-medium">Ngày:</span>
-                                        <span>{selectedDate ? new Date(selectedDate).toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : ''}</span>
+                                {/* Date Selection */}
+                                <div>
+                                    <label className="block text-sm font-medium mb-2">Chọn ngày</label>
+                                    <div className="grid grid-cols-4 gap-2">
+                                        {getNext7Days().map((day) => (
+                                            <button
+                                                key={day.value}
+                                                type="button"
+                                                onClick={() => setSelectedDate(day.value)}
+                                                className={`p-2 text-xs rounded-lg border transition-colors ${selectedDate === day.value
+                                                    ? 'bg-cyan-500 text-white border-cyan-500'
+                                                    : 'border-slate-200 hover:border-cyan-300'
+                                                    }`}
+                                            >
+                                                {day.label}
+                                            </button>
+                                        ))}
                                     </div>
-                                    <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-                                        <Clock className="w-4 h-4 text-cyan-500" />
-                                        <span className="font-medium">Giờ:</span>
-                                        <span>{selectedTime}</span>
-                                    </div>
-                                    {note && (
-                                        <div className="flex items-start gap-2 text-slate-700 dark:text-slate-300">
-                                            <span className="font-medium">Ghi chú:</span>
-                                            <span>{note}</span>
+                                </div>
+
+                                {/* Time Selection */}
+                                {selectedDate && (
+                                    <div>
+                                        <label className="block text-sm font-medium mb-2">Chọn giờ</label>
+                                        <div className="grid grid-cols-4 gap-2">
+                                            {DEFAULT_TIME_SLOTS.map((time) => (
+                                                <button
+                                                    key={time}
+                                                    type="button"
+                                                    onClick={() => setSelectedTime(time)}
+                                                    className={`p-2 text-sm rounded-lg border transition-colors ${selectedTime === time
+                                                        ? 'bg-cyan-500 text-white border-cyan-500'
+                                                        : 'border-slate-200 hover:border-cyan-300'
+                                                        }`}
+                                                >
+                                                    {time}
+                                                </button>
+                                            ))}
                                         </div>
-                                    )}
-                                </div>
-                            </div>
+                                    </div>
+                                )}
 
-                            <p className="text-sm text-slate-500 dark:text-slate-400">
-                                Bạn sẽ nhận được email xác nhận và nhắc nhở trước buổi phỏng vấn.
-                            </p>
-                        </div>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel onClick={() => {
-                            setShowConfirmDialog(false);
-                            setShowScheduleDialog(true);
-                        }}>
-                            Quay lại
-                        </AlertDialogCancel>
-                        <AlertDialogAction
-                            onClick={handleFinalConfirm}
-                            className="bg-green-500 hover:bg-green-600 text-white"
-                        >
-                            <CheckCircle className="w-4 h-4 mr-2" />
-                            Xác nhận đặt lịch
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
-
-            {/* Review Prompt Dialog */}
-            <AlertDialog open={showReviewPrompt} onOpenChange={setShowReviewPrompt}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle className="flex items-center gap-2 text-yellow-600 dark:text-yellow-400">
-                            <Star className="w-6 h-6 fill-yellow-400" />
-                            Đánh giá buổi phỏng vấn
-                        </AlertDialogTitle>
-                        <AlertDialogDescription>
-                            Bạn có một buổi phỏng vấn chưa được đánh giá. Hãy chia sẻ trải nghiệm của bạn!
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    {sessionToReview && (
-                        <div className="py-4">
-                            <div className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
-                                <Avatar className="w-12 h-12">
-                                    <AvatarFallback className="bg-cyan-100 dark:bg-cyan-900 text-cyan-600 dark:text-cyan-300 font-bold">
-                                        {sessionToReview.interviewerName.split(' ').pop()?.[0]}
-                                    </AvatarFallback>
-                                </Avatar>
+                                {/* Note */}
                                 <div>
-                                    <p className="font-semibold text-slate-900 dark:text-white">
-                                        {sessionToReview.interviewerName}
-                                    </p>
-                                    <p className="text-sm text-slate-500 dark:text-slate-400">
-                                        {sessionToReview.interviewerRole} - {formatDate(sessionToReview.date)}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                    <AlertDialogFooter>
-                        <AlertDialogCancel onClick={handleSkipReview}>
-                            Để sau
-                        </AlertDialogCancel>
-                        <AlertDialogAction
-                            onClick={() => sessionToReview && handleOpenReview(sessionToReview)}
-                            className="bg-yellow-500 hover:bg-yellow-600 text-white"
-                        >
-                            <Star className="w-4 h-4 mr-2" />
-                            Đánh giá ngay
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
-
-            {/* Review Dialog */}
-            <AlertDialog open={showReviewDialog} onOpenChange={setShowReviewDialog}>
-                <AlertDialogContent className="max-w-md">
-                    <AlertDialogHeader>
-                        <AlertDialogTitle className="flex items-center gap-2">
-                            <MessageSquare className="w-5 h-5 text-cyan-500" />
-                            Đánh giá Interviewer
-                        </AlertDialogTitle>
-                    </AlertDialogHeader>
-                    {sessionToReview && (
-                        <div className="space-y-6 py-4">
-                            {/* Interviewer Info */}
-                            <div className="flex items-center gap-4 p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
-                                <Avatar className="w-14 h-14">
-                                    <AvatarFallback className="bg-cyan-100 dark:bg-cyan-900 text-cyan-600 dark:text-cyan-300 font-bold text-lg">
-                                        {sessionToReview.interviewerName.split(' ').pop()?.[0]}
-                                    </AvatarFallback>
-                                </Avatar>
-                                <div>
-                                    <p className="font-semibold text-slate-900 dark:text-white text-lg">
-                                        {sessionToReview.interviewerName}
-                                    </p>
-                                    <p className="text-sm text-slate-500 dark:text-slate-400">
-                                        {sessionToReview.interviewerRole}
-                                    </p>
-                                    <p className="text-xs text-cyan-600 dark:text-cyan-400">
-                                        {sessionToReview.interviewerCompany}
-                                    </p>
-                                </div>
-                            </div>
-
-                            {/* Star Rating */}
-                            <div className="text-center">
-                                <p className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
-                                    Bạn đánh giá buổi phỏng vấn như thế nào?
-                                </p>
-                                <div className="flex justify-center">
-                                    <InteractiveStarRating
-                                        rating={reviewRating}
-                                        onRatingChange={setReviewRating}
-                                        size="lg"
+                                    <label className="block text-sm font-medium mb-2">Ghi chú (tùy chọn)</label>
+                                    <Textarea
+                                        value={bookingNote}
+                                        onChange={(e) => setBookingNote(e.target.value)}
+                                        placeholder="Ví dụ: Tôi muốn luyện tập phỏng vấn frontend..."
+                                        rows={3}
                                     />
                                 </div>
-                                {reviewRating > 0 && (
-                                    <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-                                        {reviewRating === 1 && 'Rất không hài lòng'}
-                                        {reviewRating === 2 && 'Không hài lòng'}
-                                        {reviewRating === 3 && 'Bình thường'}
-                                        {reviewRating === 4 && 'Hài lòng'}
-                                        {reviewRating === 5 && 'Rất hài lòng'}
-                                    </p>
-                                )}
-                            </div>
 
-                            {/* Comment */}
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                    Nhận xét của bạn (không bắt buộc)
-                                </label>
-                                <textarea
-                                    value={reviewComment}
-                                    onChange={(e) => setReviewComment(e.target.value)}
-                                    placeholder="Chia sẻ trải nghiệm của bạn về buổi phỏng vấn..."
-                                    rows={4}
-                                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-none"
-                                />
+                                {/* Actions */}
+                                <div className="flex gap-3 pt-2">
+                                    <Button
+                                        variant="outline"
+                                        className="flex-1"
+                                        onClick={() => setShowBookingDialog(false)}
+                                    >
+                                        Hủy
+                                    </Button>
+                                    <Button
+                                        className="flex-1 bg-cyan-500 hover:bg-cyan-600"
+                                        onClick={handleCreateBooking}
+                                        disabled={!selectedDate || !selectedTime || bookingLoading}
+                                    >
+                                        {bookingLoading ? (
+                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                        ) : (
+                                            'Xác nhận đặt lịch'
+                                        )}
+                                    </Button>
+                                </div>
                             </div>
-                        </div>
-                    )}
-                    <AlertDialogFooter>
-                        <AlertDialogCancel onClick={() => {
-                            setShowReviewDialog(false);
-                            setReviewRating(0);
-                            setReviewComment('');
-                        }}>
-                            Hủy
-                        </AlertDialogCancel>
-                        <AlertDialogAction
-                            onClick={handleSubmitReview}
-                            disabled={reviewRating === 0}
-                            className="bg-cyan-500 hover:bg-cyan-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            <CheckCircle className="w-4 h-4 mr-2" />
-                            Gửi đánh giá
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+                        )}
+                    </DialogContent>
+                </Dialog>
+
+                {/* ═══════════════════════════════════════════════════════════════ */}
+                {/* REVIEW DIALOG */}
+                {/* ═══════════════════════════════════════════════════════════════ */}
+                <Dialog open={showReviewDialog} onOpenChange={setShowReviewDialog}>
+                    <DialogContent className="max-w-md">
+                        <DialogHeader>
+                            <DialogTitle>Đánh giá buổi phỏng vấn</DialogTitle>
+                        </DialogHeader>
+
+                        {bookingToReview && (
+                            <div className="space-y-6">
+                                {/* Interviewer Info */}
+                                <div className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                                    <Avatar className="w-12 h-12">
+                                        {bookingToReview.mentor.avatar && <AvatarImage src={bookingToReview.mentor.avatar} />}
+                                        <AvatarFallback className="bg-cyan-100 text-cyan-600">
+                                            {bookingToReview.mentor.name?.charAt(0)}
+                                        </AvatarFallback>
+                                    </Avatar>
+                                    <div>
+                                        <p className="font-semibold">{bookingToReview.mentor.name}</p>
+                                        <p className="text-sm text-slate-500">
+                                            {formatDateTime(bookingToReview.startTime).date}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Rating */}
+                                <div className="text-center">
+                                    <p className="text-sm font-medium mb-3">Bạn đánh giá buổi phỏng vấn như thế nào?</p>
+                                    <div className="flex justify-center">
+                                        <InteractiveStarRating rating={reviewRating} onRatingChange={setReviewRating} />
+                                    </div>
+                                </div>
+
+                                {/* Comment */}
+                                <div>
+                                    <label className="block text-sm font-medium mb-2">Nhận xét (tùy chọn)</label>
+                                    <Textarea
+                                        value={reviewComment}
+                                        onChange={(e) => setReviewComment(e.target.value)}
+                                        placeholder="Chia sẻ trải nghiệm của bạn..."
+                                        rows={3}
+                                    />
+                                </div>
+
+                                {/* Actions */}
+                                <div className="flex gap-3">
+                                    <Button
+                                        variant="outline"
+                                        className="flex-1"
+                                        onClick={() => setShowReviewDialog(false)}
+                                    >
+                                        Bỏ qua
+                                    </Button>
+                                    <Button
+                                        className="flex-1 bg-yellow-500 hover:bg-yellow-600"
+                                        onClick={handleSubmitReview}
+                                        disabled={reviewRating === 0 || reviewLoading}
+                                    >
+                                        {reviewLoading ? (
+                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                        ) : (
+                                            'Gửi đánh giá'
+                                        )}
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+                    </DialogContent>
+                </Dialog>
+            </div>
         </div>
     );
 };
