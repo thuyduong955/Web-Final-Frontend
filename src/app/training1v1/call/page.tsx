@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { io, Socket } from 'socket.io-client';
 import { useAuth } from '@/hooks/useAuth';
@@ -30,7 +30,7 @@ interface RoomUser {
     role: 'interviewer' | 'interviewee';
 }
 
-export default function RealVideoCallPage() {
+function VideoCallContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const { user, profile } = useAuth();
@@ -163,7 +163,8 @@ export default function RealVideoCallPage() {
             newSocket.emit('leave-room', { roomId });
             newSocket.disconnect();
         };
-    }, [roomId, userName, role]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [roomId]);
 
     // Initialize local media
     useEffect(() => {
@@ -186,8 +187,10 @@ export default function RealVideoCallPage() {
         initMedia();
 
         return () => {
+            // eslint-disable-next-line react-hooks/exhaustive-deps
             localStream?.getTracks().forEach(track => track.stop());
         };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     // Create peer connection
@@ -479,5 +482,17 @@ export default function RealVideoCallPage() {
                 </Button>
             </div>
         </div>
+    );
+}
+
+export default function RealVideoCallPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+                <div className="text-white text-xl">Đang tải...</div>
+            </div>
+        }>
+            <VideoCallContent />
+        </Suspense>
     );
 }
