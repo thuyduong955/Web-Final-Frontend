@@ -181,9 +181,35 @@ export function LessonLibraryPage() {
 
     const fetchLessons = async () => {
         setLoading(true);
-        // TODO: Fetch lessons from NestJS API
-        // For now, use mock data
-        setLessons(MOCK_LESSONS);
+        try {
+            const { default: api } = await import('@/services/api');
+            const { data } = await api.get('/library');
+
+            // Map API response to InterviewAiCardProps
+            const apiLessons: InterviewAiCardProps[] = (data || []).map((item: any) => ({
+                id: item.id,
+                title: item.title,
+                description: item.description || '',
+                difficulty: item.difficulty === 'EASY' ? 'Dễ' : item.difficulty === 'MEDIUM' ? 'Trung cấp' : 'Nâng cao',
+                duration: `${item.duration || 30} phút`,
+                tags: item.tags || [],
+                category: item.category || 'jobs',
+                questions: [],
+                rating: item.averageRating || 0,
+                reviewCount: item.totalReviews || 0,
+                views: item.views || 0,
+                thumbnailUrl: item.thumbnailUrl,
+                videoUrl: item.videoUrl,
+                authorName: item.author?.profile?.fullName || 'Không rõ',
+            }));
+
+            // Combine API lessons with mock lessons for demo
+            setLessons([...apiLessons, ...MOCK_LESSONS]);
+        } catch (error) {
+            console.error('Error fetching lessons:', error);
+            // Fallback to mock data
+            setLessons(MOCK_LESSONS);
+        }
         setLoading(false);
     };
 
