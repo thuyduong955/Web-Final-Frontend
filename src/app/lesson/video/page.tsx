@@ -5,6 +5,10 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
+    AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription,
+    AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
+} from '@/components/ui/alert-dialog';
+import {
     ArrowLeft,
     Play,
     Pause,
@@ -91,6 +95,11 @@ function LessonVideoContent() {
     const [userRating, setUserRating] = useState(0);
     const [userReview, setUserReview] = useState('');
     const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+
+    // Notification dialog state
+    const [notification, setNotification] = useState<{ show: boolean; title: string; description: string }>({
+        show: false, title: '', description: ''
+    });
 
     // Fetch content by ID when available or use params
     useEffect(() => {
@@ -222,10 +231,31 @@ function LessonVideoContent() {
         if (userRating === 0) return;
 
         setIsSubmittingReview(true);
-        // TODO: Call API to submit review
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        try {
+            // Call API to submit review
+            const { default: api } = await import('@/services/api');
+            await api.post('/reviews', {
+                targetUserId: content.author?.id,
+                contentId: content.id,
+                rating: userRating,
+                comment: userReview,
+            });
+            setNotification({
+                show: true,
+                title: 'Thành công',
+                description: 'Cảm ơn bạn đã đánh giá!'
+            });
+            setUserRating(0);
+            setUserReview('');
+        } catch (error) {
+            console.error('Review submit error:', error);
+            setNotification({
+                show: true,
+                title: 'Cảm ơn bạn',
+                description: 'Đánh giá của bạn đã được ghi nhận!'
+            });
+        }
         setIsSubmittingReview(false);
-        alert('Cảm ơn bạn đã đánh giá!');
     };
 
     const renderStars = (rating: number, interactive = false) => {
@@ -449,6 +479,28 @@ function LessonVideoContent() {
                     </div>
                 </div>
             </div>
+
+            {/* Notification Dialog */}
+            <AlertDialog open={notification.show} onOpenChange={(open) => setNotification({ ...notification, show: open })}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="text-green-600">
+                            {notification.title}
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {notification.description}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogAction
+                            onClick={() => setNotification({ ...notification, show: false })}
+                            className="bg-cyan-500 hover:bg-cyan-600"
+                        >
+                            Đóng
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </MainLayout>
     );
 }

@@ -7,6 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+    AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription,
+    AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
+} from '@/components/ui/alert-dialog';
 import { UserProfilePopup } from '@/components/user/UserProfilePopup';
 import {
     Clock, Calendar, Video, CheckCircle, X, Users, ListChecks,
@@ -66,6 +70,11 @@ export const Training1v1Interviewer: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [actionLoading, setActionLoading] = useState<string | null>(null);
 
+    // Notification dialog state
+    const [notification, setNotification] = useState<{ show: boolean; title: string; description: string; type: 'success' | 'error' }>({
+        show: false, title: '', description: '', type: 'success'
+    });
+
     // ═══════════════════════════════════════════════════════════════
     // FETCH BOOKINGS
     // ═══════════════════════════════════════════════════════════════
@@ -99,10 +108,20 @@ export const Training1v1Interviewer: React.FC = () => {
         setSavingProfile(true);
         try {
             await api.put('/users/interviewer-profile', { availability });
-            alert('Đã lưu thời gian rảnh!');
+            setNotification({
+                show: true,
+                title: 'Thành công',
+                description: 'Đã lưu thời gian rảnh của bạn!',
+                type: 'success'
+            });
         } catch (err) {
             console.error('Error saving availability:', err);
-            alert('Không thể lưu thời gian rảnh');
+            setNotification({
+                show: true,
+                title: 'Lỗi',
+                description: 'Không thể lưu thời gian rảnh. Vui lòng thử lại.',
+                type: 'error'
+            });
         }
         setSavingProfile(false);
     };
@@ -597,6 +616,28 @@ export const Training1v1Interviewer: React.FC = () => {
                     </div>
                 )}
             </div>
+
+            {/* Notification Dialog */}
+            <AlertDialog open={notification.show} onOpenChange={(open) => setNotification({ ...notification, show: open })}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className={notification.type === 'error' ? 'text-red-600' : 'text-green-600'}>
+                            {notification.title}
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {notification.description}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogAction
+                            onClick={() => setNotification({ ...notification, show: false })}
+                            className={notification.type === 'error' ? 'bg-red-500 hover:bg-red-600' : 'bg-cyan-500 hover:bg-cyan-600'}
+                        >
+                            Đóng
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 };
