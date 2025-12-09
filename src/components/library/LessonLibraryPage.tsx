@@ -181,9 +181,35 @@ export function LessonLibraryPage() {
 
     const fetchLessons = async () => {
         setLoading(true);
-        // TODO: Fetch lessons from NestJS API
-        // For now, use mock data
-        setLessons(MOCK_LESSONS);
+        try {
+            const { default: api } = await import('@/services/api');
+            const { data } = await api.get('/library');
+
+            // Map API response to InterviewAiCardProps
+            const apiLessons: InterviewAiCardProps[] = (data || []).map((item: any) => ({
+                id: item.id,
+                title: item.title,
+                description: item.description || '',
+                difficulty: item.difficulty === 'EASY' ? 'Dễ' : item.difficulty === 'MEDIUM' ? 'Trung cấp' : 'Nâng cao',
+                duration: `${item.duration || 30} phút`,
+                tags: item.tags || [],
+                category: item.category || 'jobs',
+                questions: [],
+                rating: item.averageRating || 0,
+                reviewCount: item.totalReviews || 0,
+                views: item.views || 0,
+                thumbnailUrl: item.thumbnailUrl,
+                videoUrl: item.videoUrl,
+                authorName: item.author?.profile?.fullName || 'Không rõ',
+            }));
+
+            // Combine API lessons with mock lessons for demo
+            setLessons([...apiLessons, ...MOCK_LESSONS]);
+        } catch (error) {
+            console.error('Error fetching lessons:', error);
+            // Fallback to mock data
+            setLessons(MOCK_LESSONS);
+        }
         setLoading(false);
     };
 
@@ -205,13 +231,28 @@ export function LessonLibraryPage() {
 
     const handleStartLesson = () => {
         if (selectedLesson) {
-            router.push(`/interview/${selectedLesson.id}`);
+            // If has file attachments, open first file
+            if (selectedLesson.fileUrls && selectedLesson.fileUrls.length > 0) {
+                window.open(selectedLesson.fileUrls[0], '_blank');
+            } else {
+                // Fallback to interview page
+                router.push(`/interview/${selectedLesson.id}`);
+            }
         }
     };
 
     const handleWatchVideo = () => {
         if (selectedLesson) {
-            router.push(`/lesson/video?topic=${encodeURIComponent(selectedLesson.title)}&lessonId=${selectedLesson.id}`);
+            // Route to lesson/video page with video URL for embedded player
+            const params = new URLSearchParams({
+                topic: selectedLesson.title,
+                lessonId: selectedLesson.id,
+            });
+            // Pass videoUrl if available from R2
+            if (selectedLesson.videoUrl) {
+                params.set('videoUrl', selectedLesson.videoUrl);
+            }
+            router.push(`/lesson/video?${params.toString()}`);
         }
     };
 
@@ -281,8 +322,8 @@ export function LessonLibraryPage() {
                         ))}
                     </div>
 
-                    {/* Recruiter Action */}
-                    {(profile?.role === 'recruiter' || profile?.role === 'admin') && (
+                    {/* Interviewer/Admin Action */}
+                    {(profile?.role === 'INTERVIEWER' || profile?.role === 'admin' || profile?.role === 'ADMIN') && (
                         <Button
                             onClick={() => setShowCreateForm(true)}
                             className="rounded-full bg-brand-cyan hover:bg-brand-cyan/90 shadow-lg shadow-cyan-100 dark:shadow-cyan-900/30"
@@ -411,7 +452,7 @@ export function LessonLibraryPage() {
                                     {selectedLesson.description}
                                 </p>
                                 <p className="text-slate-600 dark:text-slate-300 leading-relaxed mt-3">
-                                    Bài học này sẽ giúp bạn nắm vững các kỹ năng cần thiết và chuẩn bị tốt nhất cho buổi phỏng vấn. 
+                                    Bài học này sẽ giúp bạn nắm vững các kỹ năng cần thiết và chuẩn bị tốt nhất cho buổi phỏng vấn.
                                     Với các câu hỏi được thiết kế sát với thực tế, bạn sẽ tự tin hơn khi đối mặt với nhà tuyển dụng.
                                 </p>
                                 <ul className="mt-4 space-y-2 text-slate-600 dark:text-slate-300">

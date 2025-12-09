@@ -1,5 +1,5 @@
-# Base image
-FROM node:18-alpine AS builder
+# Base image - Node 20 for Next.js 16+
+FROM node:20-alpine AS builder
 
 # Set working directory
 WORKDIR /app
@@ -17,11 +17,11 @@ COPY . .
 RUN npm run build
 
 # Production image
-FROM node:18-alpine AS runner
+FROM node:20-alpine AS runner
 
 WORKDIR /app
 
-ENV NODE_ENV production
+ENV NODE_ENV=production
 
 # Copy necessary files
 COPY --from=builder /app/public ./public

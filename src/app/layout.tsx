@@ -5,6 +5,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { ScheduledSessionsProvider } from "@/contexts/ScheduledSessionsContext";
 import { InterviewScoresProvider } from "@/contexts/InterviewScoresContext";
+import { DevRoleSwitcher } from "@/components/common/DevRoleSwitcher";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -37,6 +38,7 @@ export default function RootLayout({
             <ScheduledSessionsProvider>
               <InterviewScoresProvider>
                 {children}
+                <DevRoleSwitcher />
               </InterviewScoresProvider>
             </ScheduledSessionsProvider>
           </AuthProvider>

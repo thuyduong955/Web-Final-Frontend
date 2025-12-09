@@ -84,7 +84,7 @@ export function SidebarNav({ activeId, onChange }: SidebarNavProps) {
 
     return (
         <aside
-            className="w-[72px] m-6 ml-6 p-2 bg-white dark:bg-slate-800 border border-[#10182814] dark:border-slate-700 rounded-[24px] flex flex-col items-center gap-8 shadow-[0_25px_45px_rgba(13,38,76,0.08)] dark:shadow-[0_25px_45px_rgba(0,0,0,0.3)] sticky top-6 self-start max-h-[calc(100vh-3rem)] z-50 transition-colors duration-300"
+            className="w-[72px] m-6 ml-6 p-2 bg-white dark:bg-slate-800/50 border border-[#10182814] dark:border-slate-700/50 rounded-[24px] flex flex-col items-center gap-8 shadow-[0_25px_45px_rgba(13,38,76,0.08)] dark:shadow-[0_25px_45px_rgba(0,0,0,0.3)] sticky top-6 self-start max-h-[calc(100vh-3rem)] z-50 transition-colors duration-300"
             aria-label="Thanh tác vụ"
         >
             <div className="flex flex-col items-center gap-4 w-full">
@@ -92,11 +92,11 @@ export function SidebarNav({ activeId, onChange }: SidebarNavProps) {
                 <div className="relative group">
                     <div
                         className="w-14 h-14 rounded-full border-2 border-white shadow-sm ring-1 ring-slate-100 cursor-pointer transition-transform hover:scale-105"
-                        onClick={() => router.push('/profile')}
+                        onClick={() => router.push('/settings')}
                         title="Xem hồ sơ"
                     >
                         <Avatar className="w-full h-full">
-                            <AvatarImage src={DefaultAvatar.src} className="object-cover" />
+                            <AvatarImage src={profile?.avatar_url || DefaultAvatar.src} className="object-cover" />
                             <AvatarFallback className="bg-brand-cyan/10 text-brand-cyan font-bold">
                                 {profile?.full_name?.[0] || 'U'}
                             </AvatarFallback>
@@ -108,7 +108,7 @@ export function SidebarNav({ activeId, onChange }: SidebarNavProps) {
                         <div className="absolute left-full top-0 ml-4 w-64 bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-xl border border-slate-100 dark:border-slate-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 translate-x-[-10px] group-hover:translate-x-0 z-50">
                             <div className="flex items-center gap-3 mb-3">
                                 <Avatar className="w-12 h-12 border border-slate-100 dark:border-slate-600">
-                                    <AvatarImage src={DefaultAvatar.src} />
+                                    <AvatarImage src={profile.avatar_url || DefaultAvatar.src} />
                                     <AvatarFallback>{profile.full_name?.[0]}</AvatarFallback>
                                 </Avatar>
                                 <div>
@@ -119,7 +119,11 @@ export function SidebarNav({ activeId, onChange }: SidebarNavProps) {
 
                             <div className="flex items-center gap-2 mb-2">
                                 <Badge variant="secondary" className="bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/50">
-                                    {profile.role === 'recruiter' ? 'Nhà tuyển dụng' : profile.role === 'admin' ? 'Quản trị viên' : 'Ứng viên'}
+                                    {profile.role === 'INTERVIEWER' || profile.role === 'recruiter'
+                                        ? 'Mentor'
+                                        : profile.role === 'ADMIN' || profile.role === 'admin'
+                                            ? 'Quản trị viên'
+                                            : 'Ứng viên'}
                                 </Badge>
                                 <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" title="Online" />
                             </div>
