@@ -40,11 +40,21 @@ const MOCK_REVIEWS: Record<string, LessonReview[]> = {
     ],
 };
 
-const FILTER_CHIPS = [
-    { id: 'jobs', label: 'Phỏng vấn xin việc' },
-    { id: 'scholarship', label: 'Học bổng / Du học' },
-    { id: 'startup', label: 'Pitching / Startup' },
-    { id: 'softskills', label: 'Kỹ năng mềm' },
+// Categories matching QuestionBucketForm
+const CATEGORY_CHIPS = [
+    { id: 'Frontend', label: 'Frontend' },
+    { id: 'Backend', label: 'Backend' },
+    { id: 'System Design', label: 'System Design' },
+    { id: 'Data Structures', label: 'Cấu trúc dữ liệu' },
+    { id: 'Behavioral', label: 'Kỹ năng mềm' },
+    { id: 'Other', label: 'Khác' },
+];
+
+// Difficulty matching QuestionBucketForm
+const DIFFICULTY_CHIPS = [
+    { id: 'EASY', label: 'Dễ' },
+    { id: 'MEDIUM', label: 'Trung bình' },
+    { id: 'HARD', label: 'Nâng cao' },
 ];
 
 const ARTICLES = [
@@ -306,14 +316,29 @@ export function LessonLibraryPage() {
                 </div>
 
                 <div className="flex flex-wrap gap-4 items-center justify-between">
-                    <div className="flex flex-wrap gap-4" role="tablist" aria-label="Bộ lọc nội dung">
-                        {FILTER_CHIPS.map((chip) => (
+                    <div className="flex flex-wrap gap-2" role="tablist" aria-label="Lọc theo danh mục">
+                        {CATEGORY_CHIPS.map((chip) => (
                             <button
                                 key={chip.id}
                                 type="button"
-                                className={`border rounded-full px-7 py-2.5 font-semibold cursor-pointer transition-all duration-150 ${activeFilter === chip.id
-                                    ? 'border-[#62d1ee] text-[#101828] dark:text-white bg-[#62d1ee26] dark:bg-cyan-500/20'
-                                    : 'border-[#cfd6e4] dark:border-slate-600 bg-white dark:bg-slate-800 text-[#475467] dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
+                                className={`border rounded-full px-4 py-2 text-sm font-medium cursor-pointer transition-all duration-150 ${activeFilter === chip.id
+                                    ? 'border-cyan-500 text-cyan-700 dark:text-cyan-300 bg-cyan-50 dark:bg-cyan-500/20'
+                                    : 'border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
+                                    }`}
+                                onClick={() => setActiveFilter((prev) => (prev === chip.id ? '' : chip.id))}
+                            >
+                                {chip.label}
+                            </button>
+                        ))}
+                    </div>
+                    <div className="flex flex-wrap gap-2" role="tablist" aria-label="Lọc theo độ khó">
+                        {DIFFICULTY_CHIPS.map((chip) => (
+                            <button
+                                key={chip.id}
+                                type="button"
+                                className={`border rounded-full px-3 py-1.5 text-xs font-medium cursor-pointer transition-all duration-150 ${activeFilter === chip.id
+                                    ? 'border-cyan-500 text-cyan-700 dark:text-cyan-300 bg-cyan-50 dark:bg-cyan-500/20'
+                                    : 'border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
                                     }`}
                                 onClick={() => setActiveFilter((prev) => (prev === chip.id ? '' : chip.id))}
                             >

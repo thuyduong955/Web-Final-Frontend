@@ -10,8 +10,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { UserProfilePopup } from '@/components/user/UserProfilePopup';
 import {
     Clock, Calendar, Video, CheckCircle, X, Users, ListChecks,
-    Loader2, AlertCircle, RefreshCw, Check
+    Loader2, AlertCircle, RefreshCw, Check, Settings, Plus, Trash2, Save
 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 
 // ═══════════════════════════════════════════════════════════════
 // TYPES
@@ -45,7 +46,19 @@ export const Training1v1Interviewer: React.FC = () => {
     const router = useRouter();
 
     // Tab state
-    const [activeTab, setActiveTab] = useState<'pending' | 'upcoming' | 'completed'>('pending');
+    const [activeTab, setActiveTab] = useState<'pending' | 'upcoming' | 'completed' | 'settings'>('pending');
+
+    // Availability state
+    interface TimeSlot {
+        dayOfWeek: number;
+        startTime: string;
+        endTime: string;
+    }
+    const [availability, setAvailability] = useState<TimeSlot[]>([]);
+    const [loadingProfile, setLoadingProfile] = useState(false);
+    const [savingProfile, setSavingProfile] = useState(false);
+
+    const DAYS_OF_WEEK = ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
 
     // Bookings state
     const [bookings, setBookings] = useState<Booking[]>([]);
@@ -69,9 +82,49 @@ export const Training1v1Interviewer: React.FC = () => {
         setLoading(false);
     }, []);
 
+    const fetchProfile = useCallback(async () => {
+        setLoadingProfile(true);
+        try {
+            const { data } = await api.get('/auth/profile');
+            if (data.interviewerProfile?.availability) {
+                setAvailability(data.interviewerProfile.availability);
+            }
+        } catch (err) {
+            console.error('Error fetching profile:', err);
+        }
+        setLoadingProfile(false);
+    }, []);
+
+    const handleSaveAvailability = async () => {
+        setSavingProfile(true);
+        try {
+            await api.put('/users/interviewer-profile', { availability });
+            alert('Đã lưu thời gian rảnh!');
+        } catch (err) {
+            console.error('Error saving availability:', err);
+            alert('Không thể lưu thời gian rảnh');
+        }
+        setSavingProfile(false);
+    };
+
+    const handleAddTimeSlot = (dayOfWeek: number) => {
+        setAvailability([...availability, { dayOfWeek, startTime: '09:00', endTime: '12:00' }]);
+    };
+
+    const handleRemoveTimeSlot = (index: number) => {
+        setAvailability(availability.filter((_, i) => i !== index));
+    };
+
+    const handleUpdateTimeSlot = (index: number, field: 'startTime' | 'endTime', value: string) => {
+        const updated = [...availability];
+        updated[index][field] = value;
+        setAvailability(updated);
+    };
+
     useEffect(() => {
         fetchBookings();
-    }, [fetchBookings]);
+        fetchProfile();
+    }, [fetchBookings, fetchProfile]);
 
     // ═══════════════════════════════════════════════════════════════
     // BOOKING ACTIONS
@@ -203,6 +256,14 @@ export const Training1v1Interviewer: React.FC = () => {
                     >
                         <CheckCircle className="w-4 h-4 mr-2" />
                         Đã hoàn thành
+                    </Button>
+                    <Button
+                        variant={activeTab === 'settings' ? 'default' : 'outline'}
+                        onClick={() => setActiveTab('settings')}
+                        className={activeTab === 'settings' ? 'bg-slate-700 hover:bg-slate-800' : ''}
+                    >
+                        <Settings className="w-4 h-4 mr-2" />
+                        Cài đặt
                     </Button>
                     <Button
                         variant="outline"
@@ -441,6 +502,98 @@ export const Training1v1Interviewer: React.FC = () => {
                                 );
                             })
                         )}
+                    </div>
+                )}
+
+                {/* ═══════════════════════════════════════════════════════════════ */}
+                {/* TAB: SETTINGS */}
+                {/* ═══════════════════════════════════════════════════════════════ */}
+                {!loading && !error && activeTab === 'settings' && (
+                    <div className="space-y-6">
+                        <Card className="p-6">
+                            <div className="flex items-center justify-between mb-6">
+                                <div>
+                                    <h2 className="text-lg font-semibold">Thời gian rảnh</h2>
+                                    <p className="text-sm text-slate-500">Thiết lập thời gian bạn có thể nhận phỏng vấn</p>
+                                </div>
+                                <Button
+                                    onClick={handleSaveAvailability}
+                                    disabled={savingProfile}
+                                    className="bg-green-500 hover:bg-green-600"
+                                >
+                                    {savingProfile ? (
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : (
+                                        <>
+                                            <Save className="w-4 h-4 mr-2" />
+                                            Lưu
+                                        </>
+                                    )}
+                                </Button>
+                            </div>
+
+                            {loadingProfile ? (
+                                <div className="flex justify-center py-8">
+                                    <Loader2 className="w-6 h-6 animate-spin text-cyan-500" />
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    {DAYS_OF_WEEK.map((day, dayIndex) => {
+                                        const daySlots = availability
+                                            .map((slot, index) => ({ ...slot, originalIndex: index }))
+                                            .filter(slot => slot.dayOfWeek === dayIndex);
+                                        return (
+                                            <div key={dayIndex} className="border-b border-slate-100 dark:border-slate-700 pb-4">
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <span className="font-medium text-sm">{day}</span>
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() => handleAddTimeSlot(dayIndex)}
+                                                    >
+                                                        <Plus className="w-3 h-3 mr-1" />
+                                                        Thêm
+                                                    </Button>
+                                                </div>
+                                                {daySlots.length === 0 ? (
+                                                    <p className="text-xs text-slate-400 italic">Không có lịch rảnh</p>
+                                                ) : (
+                                                    <div className="flex flex-wrap gap-3">
+                                                        {daySlots.map((slot) => (
+                                                            <div key={slot.originalIndex} className="flex items-center gap-2 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-700 rounded-xl px-3 py-2 border border-slate-200 dark:border-slate-600 shadow-sm">
+                                                                <div className="flex items-center gap-1">
+                                                                    <Clock className="w-3.5 h-3.5 text-cyan-500" />
+                                                                    <input
+                                                                        type="time"
+                                                                        value={slot.startTime}
+                                                                        onChange={(e) => handleUpdateTimeSlot(slot.originalIndex, 'startTime', e.target.value)}
+                                                                        className="w-[90px] px-2 py-1 text-sm font-medium bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent outline-none transition-all"
+                                                                    />
+                                                                </div>
+                                                                <span className="text-slate-400 font-medium">→</span>
+                                                                <input
+                                                                    type="time"
+                                                                    value={slot.endTime}
+                                                                    onChange={(e) => handleUpdateTimeSlot(slot.originalIndex, 'endTime', e.target.value)}
+                                                                    className="w-[90px] px-2 py-1 text-sm font-medium bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent outline-none transition-all"
+                                                                />
+                                                                <button
+                                                                    onClick={() => handleRemoveTimeSlot(slot.originalIndex)}
+                                                                    className="ml-1 p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                                                                    title="Xóa khung giờ"
+                                                                >
+                                                                    <Trash2 className="w-4 h-4" />
+                                                                </button>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </Card>
                     </div>
                 )}
             </div>

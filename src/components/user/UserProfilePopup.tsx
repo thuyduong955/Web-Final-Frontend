@@ -178,10 +178,10 @@ export function UserProfilePopup({
 
                                 {/* Role badge */}
                                 <span className={`inline-block mt-2 px-2 py-0.5 text-xs rounded-full ${profile.role === 'INTERVIEWER'
-                                        ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300'
-                                        : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+                                    ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300'
+                                    : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
                                     }`}>
-                                    {profile.role === 'INTERVIEWER' ? 'Mentor/Interviewer' : 'Interviewee'}
+                                    {profile.role === 'INTERVIEWER' ? 'Người phỏng vấn' : 'Ứng viên'}
                                 </span>
                             </div>
                         </div>

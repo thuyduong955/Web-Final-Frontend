@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import {
-    Swords,
+    Video,
     Library,
     Calendar,
     HelpCircle,
@@ -27,7 +27,7 @@ import {
 } from '@/components/ui/alert-dialog';
 
 const NAV_ITEMS = [
-    { id: 'training1v1', label: 'Luyện tập 1v1', icon: Swords },
+    { id: 'training1v1', label: 'Phỏng vấn thử', icon: Video },
     { id: 'library', label: 'Thư viện bài học', icon: Library },
     { id: 'calendar', label: 'Lịch luyện tập', icon: Calendar },
 ];
@@ -120,7 +120,7 @@ export function SidebarNav({ activeId, onChange }: SidebarNavProps) {
                             <div className="flex items-center gap-2 mb-2">
                                 <Badge variant="secondary" className="bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/50">
                                     {profile.role === 'INTERVIEWER' || profile.role === 'recruiter'
-                                        ? 'Mentor'
+                                        ? 'Người phỏng vấn'
                                         : profile.role === 'ADMIN' || profile.role === 'admin'
                                             ? 'Quản trị viên'
                                             : 'Ứng viên'}

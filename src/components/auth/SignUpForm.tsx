@@ -264,7 +264,7 @@ export const SignUpForm: React.FC<SignUpFormProps> = ({ onToggleMode }) => {
                 )}
               >
                 <Briefcase className={cn("w-5 h-5", formData.role === 'INTERVIEWER' ? "text-brand-cyan" : "text-slate-400")} />
-                <span className="text-sm font-semibold">Mentor</span>
+                <span className="text-sm font-semibold">Người phỏng vấn</span>
                 {formData.role === 'INTERVIEWER' && (
                   <div className="absolute top-2 right-2 w-2 h-2 bg-brand-cyan rounded-full" />
                 )}
@@ -274,8 +274,8 @@ export const SignUpForm: React.FC<SignUpFormProps> = ({ onToggleMode }) => {
 
           {/* Interviewer Profile Fields */}
           {isInterviewer && (
-            <div className="space-y-4 p-4 bg-cyan-50/50 rounded-lg border border-cyan-100 animate-in fade-in slide-in-from-top-2">
-              <p className="text-sm font-semibold text-cyan-700">Thông tin Mentor (bắt buộc)</p>
+            <div className="space-y-4 p-4 bg-cyan-50/50 dark:bg-cyan-950/30 rounded-lg border border-cyan-100 dark:border-cyan-800 animate-in fade-in slide-in-from-top-2">
+              <p className="text-sm font-semibold text-cyan-700 dark:text-cyan-300">Thông tin Người phỏng vấn (bắt buộc)</p>
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">

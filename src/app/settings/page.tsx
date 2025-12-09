@@ -321,7 +321,7 @@ function SettingsContent() {
                                         <p className="text-slate-500 dark:text-slate-400">{profile?.email}</p>
                                         <span className="inline-flex items-center gap-1.5 mt-2 px-3 py-1 bg-brand-cyan/10 text-brand-cyan text-sm font-medium rounded-full">
                                             <User className="w-3.5 h-3.5" />
-                                            {profile?.role === 'INTERVIEWER' ? 'Mentor' : 'Ứng viên'}
+                                            {profile?.role === 'INTERVIEWER' ? 'Người phỏng vấn' : 'Ứng viên'}
                                         </span>
                                     </div>
                                 </div>
