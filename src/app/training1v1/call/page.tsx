@@ -156,10 +156,9 @@ function VideoCallContent() {
                 const otherUser = users[0];
                 setRemoteUser(otherUser);
                 remoteUserRef.current = otherUser;
-                setConnectionState(`${otherUser.userName} đã trong phòng`);
-
-                // Create offer after a short delay
-                setTimeout(() => createOffer(otherUser.socketId), 500);
+                setConnectionState(`${otherUser.userName} đã trong phòng, đang chờ kết nối...`);
+                // DON'T create offer here - wait for the existing user to send us an offer
+                // The existing user will receive 'user-joined' event and create the offer
             } else {
                 setConnectionState('Đang chờ người khác tham gia...');
             }
