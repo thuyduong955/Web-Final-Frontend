@@ -128,11 +128,48 @@ export default function InterviewDetail({ id }: { id?: string }) {
     const [questions, setQuestions] = useState<any[]>([]);
 
     useEffect(() => {
-        // TODO: Fetch lesson details from NestJS API
-        if (lessonId) {
-            // Temporary mock or empty state
+        const fetchLessonData = async () => {
+            if (!lessonId) {
+                setLoading(false);
+                return;
+            }
+
+            setLoading(true);
+            try {
+                const { default: api } = await import('@/services/api');
+                const { data } = await api.get(`/library/${lessonId}`);
+
+                if (data) {
+                    const lessonData: InterviewAiCardProps = {
+                        id: data.id,
+                        title: data.title,
+                        description: data.description || '',
+                        difficulty: data.difficulty === 'EASY' ? 'Dễ' : data.difficulty === 'MEDIUM' ? 'Trung cấp' : 'Nâng cao',
+                        duration: `${data.duration || 30} phút`,
+                        tags: data.tags || [],
+                        category: data.category || '',
+                        questions: [],
+                        rating: data.averageRating || 0,
+                        reviewCount: data.totalReviews || 0,
+                        views: data.views || 0,
+                        videoUrl: data.videoUrl,
+                        fileUrls: data.fileUrls,
+                        thumbnailUrl: data.thumbnailUrl,
+                    };
+                    setLesson(lessonData);
+
+                    // Set file URL if available
+                    if (data.fileUrls && data.fileUrls.length > 0) {
+                        setFileUrl(data.fileUrls[0]);
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching lesson:', error);
+            }
             setLoading(false);
-        }
+        };
+
+        fetchLessonData();
     }, [lessonId]);
 
     const totalReviews = FALLBACK_REVIEWS.length;
