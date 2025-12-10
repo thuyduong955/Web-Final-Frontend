@@ -70,16 +70,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, [fetchProfile]);
 
-  const signUp = async (email: string, password: string, userData: { full_name: string; role: UserRole }) => {
+  const signUp = async (email: string, password: string, userData: {
+    full_name: string;
+    role: UserRole;
+    interviewerProfile?: {
+      title: string;
+      company: string;
+      experience: number;
+      skills: string[];
+      bio: string;
+      linkedinUrl?: string;
+    };
+  }) => {
     try {
       await api.post('/auth/register', {
         email,
         password,
         name: userData.full_name,
-        role: userData.role // Already 'INTERVIEWEE' or 'INTERVIEWER' from SignUpForm
+        role: userData.role,
+        interviewerProfile: userData.interviewerProfile, // Pass interviewer profile data
       });
-      // Auto login after register? Or require login?
-      // For now, let's require login
       return { error: null };
     } catch (error: any) {
       return { error: { message: error.response?.data?.message || 'Registration failed' } };

@@ -108,11 +108,17 @@ const InteractiveStarRating = ({
 };
 
 // ═══════════════════════════════════════════════════════════════
-// DEFAULT TIME SLOTS
+// TIME SLOT INTERFACE
 // ═══════════════════════════════════════════════════════════════
-const DEFAULT_TIME_SLOTS = [
-    '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
-    '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00'
+interface TimeSlot {
+    dayOfWeek: number;
+    startTime: string;
+    endTime: string;
+}
+
+// Fallback time slots when interviewer has no availability set
+const FALLBACK_TIME_SLOTS = [
+    '09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00'
 ];
 
 // ═══════════════════════════════════════════════════════════════
@@ -143,6 +149,24 @@ export const Training1v1: React.FC = () => {
     const [selectedTime, setSelectedTime] = useState('');
     const [bookingNote, setBookingNote] = useState('');
     const [bookingLoading, setBookingLoading] = useState(false);
+    const [interviewerAvailability, setInterviewerAvailability] = useState<TimeSlot[]>([]);
+    const [loadingAvailability, setLoadingAvailability] = useState(false);
+
+    // Date selection state
+    const [availableDates, setAvailableDates] = useState<{ value: string; label: string }[]>([]);
+
+    useEffect(() => {
+        const days = [];
+        for (let i = 0; i < 7; i++) {
+            const date = new Date();
+            date.setDate(date.getDate() + i);
+            days.push({
+                value: date.toISOString().split('T')[0],
+                label: date.toLocaleDateString('vi-VN', { weekday: 'short', day: 'numeric', month: 'numeric' }),
+            });
+        }
+        setAvailableDates(days);
+    }, []);
 
     // Review dialog state
     const [showReviewDialog, setShowReviewDialog] = useState(false);
@@ -194,12 +218,58 @@ export const Training1v1: React.FC = () => {
     // ═══════════════════════════════════════════════════════════════
     // BOOKING HANDLERS
     // ═══════════════════════════════════════════════════════════════
-    const handleOpenBooking = (interviewer: Interviewer) => {
+    const handleOpenBooking = async (interviewer: Interviewer) => {
         setSelectedInterviewer(interviewer);
         setSelectedDate('');
         setSelectedTime('');
         setBookingNote('');
+        setInterviewerAvailability([]);
         setShowBookingDialog(true);
+
+        // Fetch interviewer's availability
+        setLoadingAvailability(true);
+        try {
+            const { data } = await api.get(`/users/interviewers/${interviewer.id}`);
+            if (data.interviewerProfile?.availability) {
+                setInterviewerAvailability(data.interviewerProfile.availability);
+            }
+        } catch (err) {
+            console.error('Error fetching availability:', err);
+        }
+        setLoadingAvailability(false);
+    };
+
+    // Get available time slots for selected date based on interviewer's availability
+    const getAvailableTimeSlotsForDate = (dateStr: string): string[] => {
+        if (!dateStr) return [];
+
+        const date = new Date(dateStr);
+        const dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
+
+        // Filter slots for the selected day
+        const daySlots = interviewerAvailability.filter(slot => slot.dayOfWeek === dayOfWeek);
+
+        if (daySlots.length === 0) {
+            // If no availability set for this day, return empty (interviewer not available)
+            return [];
+        }
+
+        // Generate hourly time slots from each availability range
+        const timeSlots: string[] = [];
+        daySlots.forEach(slot => {
+            const [startHour, startMin] = slot.startTime.split(':').map(Number);
+            const [endHour, endMin] = slot.endTime.split(':').map(Number);
+
+            // Generate slots from start to end (hourly)
+            for (let h = startHour; h < endHour || (h === endHour && 0 <= endMin); h++) {
+                const timeStr = `${h.toString().padStart(2, '0')}:00`;
+                if (!timeSlots.includes(timeStr)) {
+                    timeSlots.push(timeStr);
+                }
+            }
+        });
+
+        return timeSlots.sort();
     };
 
     const handleCreateBooking = async () => {
@@ -297,26 +367,8 @@ export const Training1v1: React.FC = () => {
     };
 
     const canJoinCall = (booking: Booking) => {
-        if (booking.status !== 'CONFIRMED' || !booking.meetingLink) return false;
-        const now = new Date();
-        const start = new Date(booking.startTime);
-        const end = new Date(booking.endTime);
-        const joinStart = new Date(start.getTime() - 10 * 60 * 1000);
-        const joinEnd = new Date(end.getTime() + 30 * 60 * 1000);
-        return now >= joinStart && now <= joinEnd;
-    };
-
-    const getNext7Days = () => {
-        const days = [];
-        for (let i = 0; i < 7; i++) {
-            const date = new Date();
-            date.setDate(date.getDate() + i);
-            days.push({
-                value: date.toISOString().split('T')[0],
-                label: date.toLocaleDateString('vi-VN', { weekday: 'short', day: 'numeric', month: 'numeric' }),
-            });
-        }
-        return days;
+        // Allow joining immediately if confirmed and has link (ignoring time constraints)
+        return booking.status === 'CONFIRMED' && !!booking.meetingLink;
     };
 
     // Filter bookings
@@ -408,7 +460,7 @@ export const Training1v1: React.FC = () => {
                                 {interviewers.map((interviewer) => (
                                     <Card key={interviewer.id} className="p-5 hover:shadow-lg transition-shadow">
                                         {/* Header with UserProfilePopup */}
-                                        <div className="flex items-start gap-4 mb-4">
+                                        <div className="flex items-start gap-4 mb-3">
                                             <UserProfilePopup
                                                 userId={interviewer.id}
                                                 userName={interviewer.name}
@@ -416,6 +468,22 @@ export const Training1v1: React.FC = () => {
                                                 userTitle={interviewer.interviewerProfile?.title || undefined}
                                             />
                                         </div>
+
+                                        {/* Title & Company */}
+                                        {interviewer.interviewerProfile && (
+                                            <div className="mb-3">
+                                                {interviewer.interviewerProfile.title && (
+                                                    <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                                                        {interviewer.interviewerProfile.title}
+                                                    </p>
+                                                )}
+                                                {interviewer.interviewerProfile.company && (
+                                                    <p className="text-xs text-cyan-600 dark:text-cyan-400">
+                                                        @ {interviewer.interviewerProfile.company}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        )}
 
                                         {/* Rating */}
                                         {interviewer.interviewerProfile && (
@@ -452,7 +520,7 @@ export const Training1v1: React.FC = () => {
                                         )}
 
                                         {/* Hourly Rate */}
-                                        {interviewer.interviewerProfile?.hourlyRate && (
+                                        {interviewer.interviewerProfile?.hourlyRate && interviewer.interviewerProfile.hourlyRate > 0 && (
                                             <p className="text-sm text-cyan-600 dark:text-cyan-400 font-medium mb-4">
                                                 {interviewer.interviewerProfile.hourlyRate.toLocaleString('vi-VN')}đ / giờ
                                             </p>
@@ -711,7 +779,7 @@ export const Training1v1: React.FC = () => {
                 {/* BOOKING DIALOG */}
                 {/* ═══════════════════════════════════════════════════════════════ */}
                 <Dialog open={showBookingDialog} onOpenChange={setShowBookingDialog}>
-                    <DialogContent className="max-w-md">
+                    <DialogContent className="max-w-md rounded-lg">
                         <DialogHeader>
                             <DialogTitle>Đặt lịch phỏng vấn</DialogTitle>
                         </DialogHeader>
@@ -738,7 +806,7 @@ export const Training1v1: React.FC = () => {
                                 <div>
                                     <label className="block text-sm font-medium mb-2">Chọn ngày</label>
                                     <div className="grid grid-cols-4 gap-2">
-                                        {getNext7Days().map((day) => (
+                                        {availableDates.map((day) => (
                                             <button
                                                 key={day.value}
                                                 type="button"
@@ -758,21 +826,48 @@ export const Training1v1: React.FC = () => {
                                 {selectedDate && (
                                     <div>
                                         <label className="block text-sm font-medium mb-2">Chọn giờ</label>
-                                        <div className="grid grid-cols-4 gap-2">
-                                            {DEFAULT_TIME_SLOTS.map((time) => (
-                                                <button
-                                                    key={time}
-                                                    type="button"
-                                                    onClick={() => setSelectedTime(time)}
-                                                    className={`p-2 text-sm rounded-lg border transition-colors ${selectedTime === time
-                                                        ? 'bg-cyan-500 text-white border-cyan-500'
-                                                        : 'border-slate-200 hover:border-cyan-300'
-                                                        }`}
-                                                >
-                                                    {time}
-                                                </button>
-                                            ))}
-                                        </div>
+                                        {loadingAvailability ? (
+                                            <div className="flex items-center justify-center py-4">
+                                                <Loader2 className="w-5 h-5 animate-spin text-cyan-500" />
+                                            </div>
+                                        ) : (() => {
+                                            const availableSlots = getAvailableTimeSlotsForDate(selectedDate);
+                                            const slotsToShow = availableSlots.length > 0 ? availableSlots : FALLBACK_TIME_SLOTS;
+                                            const isUsingFallback = availableSlots.length === 0 && interviewerAvailability.length > 0;
+
+                                            if (isUsingFallback) {
+                                                return (
+                                                    <p className="text-sm text-amber-600 dark:text-amber-400 py-2">
+                                                        Interviewer không rảnh vào ngày này
+                                                    </p>
+                                                );
+                                            }
+
+                                            return (
+                                                <>
+                                                    {interviewerAvailability.length === 0 && (
+                                                        <p className="text-xs text-slate-500 mb-2">
+                                                            Interviewer chưa thiết lập lịch rảnh, hiển thị giờ mặc định
+                                                        </p>
+                                                    )}
+                                                    <div className="grid grid-cols-4 gap-2">
+                                                        {slotsToShow.map((time) => (
+                                                            <button
+                                                                key={time}
+                                                                type="button"
+                                                                onClick={() => setSelectedTime(time)}
+                                                                className={`p-2 text-sm rounded-lg border transition-colors ${selectedTime === time
+                                                                    ? 'bg-cyan-500 text-white border-cyan-500'
+                                                                    : 'border-slate-200 hover:border-cyan-300'
+                                                                    }`}
+                                                            >
+                                                                {time}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </>
+                                            );
+                                        })()}
                                     </div>
                                 )}
 

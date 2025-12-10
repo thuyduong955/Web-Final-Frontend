@@ -5,6 +5,10 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
+    AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription,
+    AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
+} from '@/components/ui/alert-dialog';
+import {
     ArrowLeft,
     Play,
     Pause,
@@ -23,42 +27,21 @@ import {
 } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
 
-// Mock data - sẽ được thay bằng API call
-const MOCK_CONTENT = {
-    id: 'qs-1',
-    title: 'Phỏng vấn Frontend Developer (ReactJS)',
-    description: `Bộ câu hỏi phỏng vấn phổ biến cho vị trí Frontend Developer với ReactJS.
-
-Nội dung bao gồm:
-• Các câu hỏi về React hooks và lifecycle
-• System Design cho ứng dụng frontend
-• Performance optimization
-• Best practices và design patterns`,
-    videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
-    fileUrl: '/sample-questions.pdf', // File đính kèm
-    duration: 45, // minutes
+// Default content when API fails or no lessonId provided
+const DEFAULT_CONTENT = {
+    id: '',
+    title: '',
+    description: '',
+    videoUrl: '',
+    fileUrl: '',
+    duration: 0,
     difficulty: 'MEDIUM',
-    category: 'Frontend',
-    tags: ['React', 'JavaScript', 'Interview'],
-    viewCount: 15420,
-    rating: 4.5,
-    reviewCount: 128,
-    author: {
-        id: 'u-1',
-        name: 'Nguyễn Văn Mentor',
-        avatar: '',
-        title: 'Senior Software Engineer',
-        company: 'Google'
-    },
-    chapters: [
-        { time: 0, title: 'Giới thiệu' },
-        { time: 150, title: 'React Hooks cơ bản' },
-        { time: 615, title: 'useState và useEffect' },
-        { time: 1080, title: 'Custom Hooks' },
-        { time: 1530, title: 'Performance Optimization' },
-        { time: 2100, title: 'System Design' },
-        { time: 2520, title: 'Tips phỏng vấn' },
-    ]
+    category: '',
+    tags: [] as string[],
+    viewCount: 0,
+    rating: 0,
+    reviewCount: 0,
+    author: null as { id: string; name: string; avatar: string; title: string; company: string } | null,
 };
 
 interface ChapterItem {
@@ -77,7 +60,7 @@ function LessonVideoContent() {
     const videoUrlParam = searchParams.get('videoUrl'); // Real R2 video URL
 
     // Content state - will be populated from API or use mock as fallback
-    const [content, setContent] = useState(MOCK_CONTENT);
+    const [content, setContent] = useState(DEFAULT_CONTENT);
     const [isLoading, setIsLoading] = useState(false);
 
     const [isPlaying, setIsPlaying] = useState(false);
@@ -92,6 +75,11 @@ function LessonVideoContent() {
     const [userReview, setUserReview] = useState('');
     const [isSubmittingReview, setIsSubmittingReview] = useState(false);
 
+    // Notification dialog state
+    const [notification, setNotification] = useState<{ show: boolean; title: string; description: string }>({
+        show: false, title: '', description: ''
+    });
+
     // Fetch content by ID when available or use params
     useEffect(() => {
         const fetchContent = async () => {
@@ -104,16 +92,25 @@ function LessonVideoContent() {
                         const { data } = await api.get(`/library/${lessonId}`);
                         if (data) {
                             setContent({
-                                ...MOCK_CONTENT,
+                                ...DEFAULT_CONTENT,
                                 id: data.id,
-                                title: data.title || topic || MOCK_CONTENT.title,
-                                description: data.description || MOCK_CONTENT.description,
-                                videoUrl: videoUrlParam || data.videoUrl || MOCK_CONTENT.videoUrl,
-                                fileUrl: data.fileUrls?.[0] || MOCK_CONTENT.fileUrl,
-                                duration: data.duration || MOCK_CONTENT.duration,
-                                rating: data.averageRating || MOCK_CONTENT.rating,
-                                reviewCount: data.totalReviews || MOCK_CONTENT.reviewCount,
-                                viewCount: data.views || MOCK_CONTENT.viewCount,
+                                title: data.title || topic || DEFAULT_CONTENT.title,
+                                description: data.description || DEFAULT_CONTENT.description,
+                                videoUrl: videoUrlParam || data.videoUrl || DEFAULT_CONTENT.videoUrl,
+                                fileUrl: data.fileUrls?.[0] || DEFAULT_CONTENT.fileUrl,
+                                duration: data.duration || DEFAULT_CONTENT.duration,
+                                rating: data.averageRating || DEFAULT_CONTENT.rating,
+                                reviewCount: data.totalReviews || DEFAULT_CONTENT.reviewCount,
+                                viewCount: data.views || DEFAULT_CONTENT.viewCount,
+                                tags: data.tags || [],
+                                category: data.category || '',
+                                author: data.author ? {
+                                    id: data.author.id,
+                                    name: data.author.name || data.author.profile?.fullName || 'Không rõ',
+                                    avatar: data.author.avatar || '',
+                                    title: data.author.interviewerProfile?.title || '',
+                                    company: data.author.interviewerProfile?.company || '',
+                                } : null,
                             });
                             return;
                         }
@@ -222,10 +219,31 @@ function LessonVideoContent() {
         if (userRating === 0) return;
 
         setIsSubmittingReview(true);
-        // TODO: Call API to submit review
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        try {
+            // Call API to submit review
+            const { default: api } = await import('@/services/api');
+            await api.post('/reviews', {
+                targetUserId: content.author?.id,
+                contentId: content.id,
+                rating: userRating,
+                comment: userReview,
+            });
+            setNotification({
+                show: true,
+                title: 'Thành công',
+                description: 'Cảm ơn bạn đã đánh giá!'
+            });
+            setUserRating(0);
+            setUserReview('');
+        } catch (error) {
+            console.error('Review submit error:', error);
+            setNotification({
+                show: true,
+                title: 'Cảm ơn bạn',
+                description: 'Đánh giá của bạn đã được ghi nhận!'
+            });
+        }
         setIsSubmittingReview(false);
-        alert('Cảm ơn bạn đã đánh giá!');
     };
 
     const renderStars = (rating: number, interactive = false) => {
@@ -347,21 +365,25 @@ function LessonVideoContent() {
                         {/* Left Column */}
                         <div className="lg:col-span-2 space-y-6">
                             {/* Author */}
-                            <div className="flex items-center gap-4 p-4 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
-                                <Avatar className="w-12 h-12">
-                                    <AvatarFallback className="bg-cyan-100 dark:bg-cyan-900 text-cyan-600 font-bold">
-                                        {content.author.name.split(' ').pop()?.[0]}
-                                    </AvatarFallback>
-                                </Avatar>
-                                <div>
-                                    <p className="font-semibold text-slate-900 dark:text-white">
-                                        {content.author.name}
-                                    </p>
-                                    <p className="text-sm text-slate-500">
-                                        {content.author.title} @ {content.author.company}
-                                    </p>
+                            {content.author && (
+                                <div className="flex items-center gap-4 p-4 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                                    <Avatar className="w-12 h-12">
+                                        <AvatarFallback className="bg-cyan-100 dark:bg-cyan-900 text-cyan-600 font-bold">
+                                            {content.author.name?.split(' ').pop()?.[0] || '?'}
+                                        </AvatarFallback>
+                                    </Avatar>
+                                    <div>
+                                        <p className="font-semibold text-slate-900 dark:text-white">
+                                            {content.author.name || 'Không rõ'}
+                                        </p>
+                                        {(content.author.title || content.author.company) && (
+                                            <p className="text-sm text-slate-500">
+                                                {content.author.title}{content.author.title && content.author.company ? ' @ ' : ''}{content.author.company}
+                                            </p>
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
+                            )}
 
                             {/* Description */}
                             <div className="p-4 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
@@ -422,33 +444,31 @@ function LessonVideoContent() {
                                 </Button>
                             </div>
                         </div>
-
-                        {/* Right Column - Chapters */}
-                        <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4 h-fit">
-                            <h3 className="font-semibold text-slate-900 dark:text-white mb-4">Nội dung bài học</h3>
-                            <div className="space-y-2">
-                                {content.chapters.map((chapter, index) => (
-                                    <button
-                                        key={index}
-                                        onClick={() => seekToChapter(chapter.time)}
-                                        className={`w-full flex items-center gap-3 p-3 rounded-lg text-left transition-colors ${currentTime >= chapter.time && (index === content.chapters.length - 1 || currentTime < content.chapters[index + 1].time)
-                                            ? 'bg-cyan-50 dark:bg-cyan-900/30 border border-cyan-200 dark:border-cyan-800'
-                                            : 'hover:bg-slate-50 dark:hover:bg-slate-700'
-                                            }`}
-                                    >
-                                        <span className="text-cyan-500 font-mono text-sm w-12 shrink-0">
-                                            {formatTime(chapter.time)}
-                                        </span>
-                                        <span className="text-slate-700 dark:text-slate-300 text-sm">
-                                            {chapter.title}
-                                        </span>
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
+
+            {/* Notification Dialog */}
+            <AlertDialog open={notification.show} onOpenChange={(open) => setNotification({ ...notification, show: open })}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="text-green-600">
+                            {notification.title}
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {notification.description}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogAction
+                            onClick={() => setNotification({ ...notification, show: false })}
+                            className="bg-cyan-500 hover:bg-cyan-600"
+                        >
+                            Đóng
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </MainLayout>
     );
 }

@@ -58,6 +58,16 @@ function SettingsContent() {
         dateOfBirth: '',
         avatar: '',
     });
+
+    // Interviewer profile state (for INTERVIEWER role)
+    const [interviewerData, setInterviewerData] = useState({
+        title: '',
+        company: '',
+        experience: 0,
+        hourlyRate: 0,
+        skills: [] as string[],
+    });
+    const [originalInterviewerData, setOriginalInterviewerData] = useState<typeof interviewerData | null>(null);
     const [originalProfileData, setOriginalProfileData] = useState(profileData);
     const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
     const [avatarFile, setAvatarFile] = useState<File | null>(null);
@@ -101,6 +111,30 @@ function SettingsContent() {
             };
             setProfileData(data);
             setOriginalProfileData(data);
+
+            // Load interviewer profile if INTERVIEWER role
+            if (profile.role === 'INTERVIEWER') {
+                const fetchInterviewerProfile = async () => {
+                    try {
+                        const { data: userData } = await api.get('/auth/profile');
+                        if (userData.interviewerProfile) {
+                            const ip = userData.interviewerProfile;
+                            const iData = {
+                                title: ip.title || '',
+                                company: ip.company || '',
+                                experience: ip.experience || 0,
+                                hourlyRate: ip.hourlyRate || 0,
+                                skills: ip.skills || [],
+                            };
+                            setInterviewerData(iData);
+                            setOriginalInterviewerData(iData);
+                        }
+                    } catch (err) {
+                        console.error('Failed to load interviewer profile:', err);
+                    }
+                };
+                fetchInterviewerProfile();
+            }
         }
     }, [profile]);
 
@@ -321,7 +355,7 @@ function SettingsContent() {
                                         <p className="text-slate-500 dark:text-slate-400">{profile?.email}</p>
                                         <span className="inline-flex items-center gap-1.5 mt-2 px-3 py-1 bg-brand-cyan/10 text-brand-cyan text-sm font-medium rounded-full">
                                             <User className="w-3.5 h-3.5" />
-                                            {profile?.role === 'INTERVIEWER' ? 'Mentor' : 'Ứng viên'}
+                                            {profile?.role === 'INTERVIEWER' ? 'Người phỏng vấn' : 'Ứng viên'}
                                         </span>
                                     </div>
                                 </div>
@@ -401,6 +435,94 @@ function SettingsContent() {
                                         )}
                                     </div>
 
+                                    {/* Interviewer Profile Section - Only for INTERVIEWER role */}
+                                    {profile?.role === 'INTERVIEWER' && (
+                                        <>
+                                            <div className="border-t border-slate-200 dark:border-slate-600 pt-6 mt-6">
+                                                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
+                                                    Thông tin Interviewer
+                                                </h3>
+                                            </div>
+
+                                            {/* Title */}
+                                            <div>
+                                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                                    Chức danh
+                                                </label>
+                                                {isEditMode ? (
+                                                    <Input
+                                                        type="text"
+                                                        value={interviewerData.title}
+                                                        onChange={(e) => setInterviewerData(p => ({ ...p, title: e.target.value }))}
+                                                        placeholder="VD: Senior Software Engineer"
+                                                    />
+                                                ) : (
+                                                    <div className="px-4 py-2.5 bg-slate-50 dark:bg-slate-700/30 rounded-lg text-slate-900 dark:text-white">
+                                                        {interviewerData.title || '-'}
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Company */}
+                                            <div>
+                                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                                    Công ty
+                                                </label>
+                                                {isEditMode ? (
+                                                    <Input
+                                                        type="text"
+                                                        value={interviewerData.company}
+                                                        onChange={(e) => setInterviewerData(p => ({ ...p, company: e.target.value }))}
+                                                        placeholder="VD: Google, FPT Software"
+                                                    />
+                                                ) : (
+                                                    <div className="px-4 py-2.5 bg-slate-50 dark:bg-slate-700/30 rounded-lg text-slate-900 dark:text-white">
+                                                        {interviewerData.company || '-'}
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Experience & Hourly Rate */}
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <div>
+                                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                                        Số năm kinh nghiệm
+                                                    </label>
+                                                    {isEditMode ? (
+                                                        <Input
+                                                            type="number"
+                                                            min="0"
+                                                            value={interviewerData.experience}
+                                                            onChange={(e) => setInterviewerData(p => ({ ...p, experience: parseInt(e.target.value) || 0 }))}
+                                                            placeholder="5"
+                                                        />
+                                                    ) : (
+                                                        <div className="px-4 py-2.5 bg-slate-50 dark:bg-slate-700/30 rounded-lg text-slate-900 dark:text-white">
+                                                            {interviewerData.experience || 0} năm
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                                        Phí tư vấn / giờ (VNĐ)
+                                                    </label>
+                                                    {isEditMode ? (
+                                                        <Input
+                                                            type="number"
+                                                            min="0"
+                                                            value={interviewerData.hourlyRate}
+                                                            onChange={(e) => setInterviewerData(p => ({ ...p, hourlyRate: parseInt(e.target.value) || 0 }))}
+                                                            placeholder="500000"
+                                                        />
+                                                    ) : (
+                                                        <div className="px-4 py-2.5 bg-slate-50 dark:bg-slate-700/30 rounded-lg text-slate-900 dark:text-white">
+                                                            {interviewerData.hourlyRate?.toLocaleString('vi-VN') || 0}đ
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </>
+                                    )}
                                     {/* Gender & Date of Birth */}
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>

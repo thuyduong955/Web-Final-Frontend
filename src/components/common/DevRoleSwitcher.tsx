@@ -86,8 +86,8 @@ export function DevRoleSwitcher() {
                 <button
                     onClick={() => handleRoleChange('INTERVIEWEE')}
                     className={`w-full px-3 py-2 rounded-lg text-sm font-medium transition-all ${currentRole === 'INTERVIEWEE' || currentRole === 'job_seeker'
-                            ? 'bg-cyan-500 text-white'
-                            : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                        ? 'bg-cyan-500 text-white'
+                        : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
                         }`}
                 >
                     👤 INTERVIEWEE (Ứng viên)
@@ -95,11 +95,11 @@ export function DevRoleSwitcher() {
                 <button
                     onClick={() => handleRoleChange('INTERVIEWER')}
                     className={`w-full px-3 py-2 rounded-lg text-sm font-medium transition-all ${currentRole === 'INTERVIEWER' || currentRole === 'recruiter'
-                            ? 'bg-cyan-500 text-white'
-                            : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                        ? 'bg-cyan-500 text-white'
+                        : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
                         }`}
                 >
-                    🎓 INTERVIEWER (Mentor)
+                    🎓 INTERVIEWER (Người phỏng vấn)
                 </button>
                 <button
                     onClick={() => handleRoleChange(null)}
