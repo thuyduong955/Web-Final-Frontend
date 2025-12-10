@@ -56,6 +56,16 @@ function VideoCallContent() {
     const socketRef = useRef<Socket | null>(null);
     const remoteUserRef = useRef<RoomUser | null>(null);
     const localStreamRef = useRef<MediaStream | null>(null);
+    const iceCandidatesQueue = useRef<RTCIceCandidateInit[]>([]);
+
+    // ... (existing refs)
+
+
+
+    // ... (inside useEffect socket listeners)
+
+    // Update the answer handler as well to flush queue
+
 
     const userName = profile?.full_name || user?.email?.split('@')[0] || 'User';
     const userId = user?.id || `guest-${Date.now()}`;
@@ -195,6 +205,15 @@ function VideoCallContent() {
             if (peerConnectionRef.current) {
                 try {
                     await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(answer));
+
+                    // Process queued candidates
+                    while (iceCandidatesQueue.current.length > 0) {
+                        const candidate = iceCandidatesQueue.current.shift();
+                        if (candidate) {
+                            console.log('[VideoCall] Adding queued ICE candidate (after answer)');
+                            await peerConnectionRef.current.addIceCandidate(new RTCIceCandidate(candidate));
+                        }
+                    }
                 } catch (err) {
                     console.error('[VideoCall] Error setting remote description:', err);
                 }
@@ -202,11 +221,20 @@ function VideoCallContent() {
         });
 
         newSocket.on('ice-candidate', async ({ candidate }: { candidate: RTCIceCandidateInit }) => {
-            if (peerConnectionRef.current && candidate) {
-                try {
-                    await peerConnectionRef.current.addIceCandidate(new RTCIceCandidate(candidate));
-                } catch (err) {
-                    console.error('[VideoCall] Error adding ICE candidate:', err);
+            if (candidate) {
+                // Check if we have a PC and if remote description is set
+                const pc = peerConnectionRef.current;
+                const isRemoteSet = pc && pc.remoteDescription && pc.remoteDescription.type;
+
+                if (isRemoteSet) {
+                    try {
+                        await pc.addIceCandidate(new RTCIceCandidate(candidate));
+                    } catch (err) {
+                        console.error('[VideoCall] Error adding ICE candidate:', err);
+                    }
+                } else {
+                    console.log('[VideoCall] Queueing ICE candidate (remote description not set)');
+                    iceCandidatesQueue.current.push(candidate);
                 }
             }
         });
@@ -304,6 +332,16 @@ function VideoCallContent() {
 
         try {
             await pc.setRemoteDescription(new RTCSessionDescription(offer));
+
+            // Process queued candidates
+            while (iceCandidatesQueue.current.length > 0) {
+                const candidate = iceCandidatesQueue.current.shift();
+                if (candidate) {
+                    console.log('[VideoCall] Adding queued ICE candidate (in handleOffer)');
+                    await pc.addIceCandidate(new RTCIceCandidate(candidate));
+                }
+            }
+
             const answer = await pc.createAnswer();
             await pc.setLocalDescription(answer);
 
